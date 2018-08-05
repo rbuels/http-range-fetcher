@@ -24,10 +24,15 @@ class BufferCache {
     aggregationTime = 100,
   }) {
     if (!fetch) throw new Error('fetch function required')
-    this.aggregator = new AggregatingFetcher({
-      fetch,
-      frequency: aggregationTime,
-    })
+    if (!aggregationTime) {
+      this._fetch = fetch
+    } else {
+      this.aggregator = new AggregatingFetcher({
+        fetch,
+        frequency: aggregationTime,
+      })
+      this._fetch = (key, start, end) => this.aggregator.fetch(key, start, end)
+    }
     this.chunkSize = chunkSize
     this.chunkCache = LRU({ max: Math.floor(size / chunkSize) })
   }
@@ -60,7 +65,7 @@ class BufferCache {
     const cachedPromise = this.chunkCache.get(chunkKey)
     if (cachedPromise) return cachedPromise
 
-    const freshPromise = this.aggregator.fetch(
+    const freshPromise = this._fetch(
       key,
       chunkNumber * this.chunkSize,
       (chunkNumber + 1) * this.chunkSize,
