@@ -5,7 +5,11 @@ const { BufferCache } = require('../src/index')
 describe('super duper cache', () => {
   jest.setTimeout(500)
   it(`can fetch a single chunk`, async () => {
-    const fetch = async () => Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    const fetch = async () => ({
+      headers: {},
+      responseDate: new Date(),
+      buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+    })
     const cache = new BufferCache({ fetch, aggregationTime: 0 })
     const got = await cache.get('http://foo.com/', 0, 10)
     expect(got[0]).toEqual(0)
@@ -18,9 +22,13 @@ describe('super duper cache', () => {
     const fetch = async (url, start, end) => {
       calls.push([url, start, end])
       const add = url === 'bar' ? 1000 : 0
-      return _.range(0, 500)
-        .slice(start, end)
-        .map(n => add + n)
+      return {
+        headers: {},
+        responseDate: new Date(),
+        buffer: _.range(0, 500)
+          .slice(start, end)
+          .map(n => add + n),
+      }
     }
     const cache = new BufferCache({ fetch, chunkSize: 10 })
     const results = await Promise.all([

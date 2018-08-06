@@ -35,7 +35,8 @@ class AggregatingFetcher {
   // the individual requests
   _dispatch({ url, start, end, requests }) {
     this.fetchCallback(url, start, end).then(
-      data => {
+      response => {
+        const data = response.buffer
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
           // remember Buffer.slice does not copy, it creates
           // an offset child buffer pointing to the same data
