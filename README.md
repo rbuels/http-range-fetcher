@@ -52,7 +52,8 @@ Promise.all([
 #### Table of Contents
 
 -   [HttpRangeCache](#httprangecache)
-    -   [get](#get)
+    -   [getRange](#getrange)
+    -   [stat](#stat)
 
 ### HttpRangeCache
 
@@ -79,6 +80,20 @@ Fetch a range of a remote resource.
     This is passed along to the fetch callback.
 -   `position` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** offset in the file at which to start fetching
 -   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** number of bytes to fetch
+
+#### stat
+
+Fetches the first few bytes of the remote file (if necessary) and uses
+the returned headers to populate a `fs`-compatible stat object.
+
+Currently, this attempts to set `size`, `mtime`, and `mtimeMs`, if
+the information is available from HTTP headers.
+
+**Parameters**
+
+-   `key` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+
+Returns **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
 ## Academic Use
 

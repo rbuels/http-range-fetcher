@@ -64,6 +64,14 @@ describe('super duper cache', () => {
       408,
       409,
     ])
+    expect(await cache.stat('foo')).toEqual({ size: 501 })
     expect(calls).toEqual([['foo', 0, 90], ['bar', 0, 10], ['foo', 400, 410]])
+    expect(await cache.stat('donk')).toEqual({ size: 501 })
+    expect(calls).toEqual([
+      ['foo', 0, 90],
+      ['bar', 0, 10],
+      ['foo', 400, 410],
+      ['donk', 0, 1],
+    ])
   })
 })

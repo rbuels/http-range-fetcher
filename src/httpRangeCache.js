@@ -69,6 +69,7 @@ class HttpRangeCache {
     this.chunkSize = chunkSize
     this.chunkCache = LRU({ max: Math.floor(size / chunkSize) })
     this.cacheSemantics = new CacheSemantics({ minimumTTL })
+    this.stats = LRU({ max: 20 })
   }
 
   /**
@@ -110,6 +111,46 @@ class HttpRangeCache {
         new CompositeBufferProxyHandler(chunksOffset, this.chunkSize, length),
       ),
     }
+  }
+
+  /**
+   * Fetches the first few bytes of the remote file (if necessary) and uses
+   * the returned headers to populate a `fs`-like stat object.
+   *
+   * Currently, this attempts to set `size`, `mtime`, and `mtimeMs`, if
+   * the information is available from HTTP headers.
+   *
+   * @param {string} key
+   * @returns {Promise} for a stats object
+   */
+  async stat(key) {
+    let stat = this.stats.get(key)
+    if (!stat) {
+      const res = await this.aggregator.fetch(key, 0, 1)
+      stat = this._headersToStats(res)
+      this.stats.set(key, stat)
+    }
+    return stat
+  }
+
+  _headersToStats(chunkResponse) {
+    const { headers } = chunkResponse
+    const stat = {}
+    if (headers['content-range']) {
+      const match = headers['content-range'].match(/\d+-\d+\/(\d+)/)
+      if (match) {
+        stat.size = parseInt(match[1], 10)
+        if (Number.isNaN(stat.size)) delete stat.size
+      }
+    }
+    if (headers['last-modified']) {
+      stat.mtime = new Date(headers['last-modified'])
+      if (stat.mtime.toString() === 'Invalid Date') delete stat.mtime
+      if (stat.mtime) {
+        stat.mtimeMs = stat.mtime.getTime()
+      }
+    }
+    return stat
   }
 
   _makeHeaders(originalHeaders, newStart, newEnd) {
@@ -154,6 +195,9 @@ class HttpRangeCache {
     this.chunkCache.set(chunkKey, freshPromise)
 
     const freshChunk = await freshPromise
+
+    // gather the stats for the file from the headers
+    this.stats.set(key, this._headersToStats(freshChunk))
 
     // remove the promise from the cache
     // if it turns out not to be cacheable. this is
