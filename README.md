@@ -16,7 +16,7 @@ Designed for applications that request lots of small byte ranges over HTTP.
 const { HttpRangeCache } = require('http-range-cache')
 
 const cache = new HttpRangeCache({})
-cache.get('http://foo.bar/baz.bam', 20, 10)
+cache.getRange('http://foo.bar/baz.bam', 20, 10)
 .then( response => {
   assert(response.buffer.length === 10)
   assert(response.headers['content-range'] === '20-29/23422')
@@ -33,12 +33,12 @@ cache.get('http://foo.bar/baz.bam', 20, 10)
 // as a single request for a big chunk of the remote file,
 // which will be cached to satisfy subsequent requests
 Promise.all([
-    cache.get('http://foo.bar/baz.bam', 20, 10),
-    cache.get('http://foo.bar/baz.bam', 30, 10),
-    cache.get('http://foo.bar/baz.bam', 40, 10),
-    cache.get('http://foo.bar/baz.bam', 50, 10),
-    cache.get('http://foo.bar/baz.bam', 60, 10),
-    cache.get('http://foo.bar/baz.bam', 70, 10),
+    cache.getRange('http://foo.bar/baz.bam', 20, 10),
+    cache.getRange('http://foo.bar/baz.bam', 30, 10),
+    cache.getRange('http://foo.bar/baz.bam', 40, 10),
+    cache.getRange('http://foo.bar/baz.bam', 50, 10),
+    cache.getRange('http://foo.bar/baz.bam', 60, 10),
+    cache.getRange('http://foo.bar/baz.bam', 70, 10),
 ])
 .then(fetchResults => {
     fetchResults.forEach(res => assert(res.buffer.length === 10))
@@ -69,7 +69,7 @@ caches chunks in an LRU cache, and aggregates upstream fetches
     -   `$0.minimumTTL`   (optional, default `1000`)
 -   `args` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the arguments object
 
-#### get
+#### getRange
 
 Fetch a range of a remote resource.
 

@@ -78,7 +78,7 @@ class HttpRangeCache {
    * @param {number} position offset in the file at which to start fetching
    * @param {number} length number of bytes to fetch
    */
-  async get(key, position, length) {
+  async getRange(key, position, length) {
     // calculate the list of chunks involved in this fetch
     const firstChunk = Math.floor(position / this.chunkSize)
     const lastChunk = Math.floor((position + length - 1) / this.chunkSize)

@@ -11,7 +11,7 @@ describe('super duper cache', () => {
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     })
     const cache = new HttpRangeCache({ fetch, aggregationTime: 0 })
-    const got = await cache.get('http://foo.com/', 0, 10)
+    const got = await cache.getRange('http://foo.com/', 0, 10)
     expect(got.buffer[0]).toEqual(0)
     expect(got.buffer[9]).toEqual(9)
     expect(got.buffer.length).toEqual(10)
@@ -32,14 +32,14 @@ describe('super duper cache', () => {
     }
     const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
     const results = await Promise.all([
-      cache.get('foo', 4, 10),
-      cache.get('foo', 0, 1),
-      cache.get('bar', 0, 5),
-      cache.get('foo', 80, 10),
+      cache.getRange('foo', 4, 10),
+      cache.getRange('foo', 0, 1),
+      cache.getRange('bar', 0, 5),
+      cache.getRange('foo', 80, 10),
     ])
     await promisify(setTimeout)(150)
-    const got2 = await cache.get('foo', 0, 3)
-    const got3 = await cache.get('foo', 400, 10)
+    const got2 = await cache.getRange('foo', 0, 3)
+    const got3 = await cache.getRange('foo', 400, 10)
     expect(JSON.parse(JSON.stringify(results.map(r => r.buffer)))).toEqual([
       [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       [0],
