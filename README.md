@@ -17,12 +17,21 @@ const { HttpRangeCache } = require('http-range-cache')
 
 const cache = new HttpRangeCache({})
 cache.get('http://foo.bar/baz.bam', 20, 10)
-.then( buffer => {
-  assert(buffer.length === 10)
+.then( response => {
+  assert(response.buffer.length === 10)
+  assert(response.headers['content-range'] === '20-29/23422')
+  // response objects contain `headers` and `buffer`.  the `headers` object
+  // contains the original headers that came from the server in response to the
+  // aggregated call, except the Content-Range header has been overwritten
+  // to match the requested range, and it adds a X-Resource-Length header that
+  // conveniently gives the total length of the remote resource so you don't
+  // have to parse the Content-Range header.
+  assert(response.headers['x-resource-length'] === 23422)
 })
 
-// these will all probably be dispatched behind the scenes
-// as a single request for a single larger chunk of the remote file
+// these will be aggregated behind the scenes
+// as a single request for a big chunk of the remote file,
+// which will be cached to satisfy subsequent requests
 Promise.all([
     cache.get('http://foo.bar/baz.bam', 20, 10),
     cache.get('http://foo.bar/baz.bam', 30, 10),
@@ -32,7 +41,7 @@ Promise.all([
     cache.get('http://foo.bar/baz.bam', 70, 10),
 ])
 .then(fetchResults => {
-    fetchResults.forEach(buffer => assert(buffer.length === 10))
+    fetchResults.forEach(res => assert(res.buffer.length === 10))
 })
 ```
 

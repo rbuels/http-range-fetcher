@@ -40,7 +40,10 @@ class AggregatingFetcher {
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
           // remember Buffer.slice does not copy, it creates
           // an offset child buffer pointing to the same data
-          resolve(data.slice(reqStart - start, reqEnd - start))
+          resolve({
+            headers: response.headers,
+            buffer: data.slice(reqStart - start, reqEnd - start),
+          })
         })
       },
       err => requests.forEach(({ reject }) => reject(err)),

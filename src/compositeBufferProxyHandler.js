@@ -41,7 +41,7 @@ class CompositeBuffer {
       const offsetIndex = index + this._offset
       const chunkNumber = Math.floor(offsetIndex / this._chunkSize)
       const chunkIndex = offsetIndex - chunkNumber * this._chunkSize
-      return target[chunkNumber].data[chunkIndex]
+      return target[chunkNumber][chunkIndex]
     }
     return undefined
   }

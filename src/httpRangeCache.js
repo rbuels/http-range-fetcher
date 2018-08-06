@@ -86,19 +86,42 @@ class HttpRangeCache {
     // fetch them all as necessary
     const fetches = new Array(lastChunk - firstChunk + 1)
     for (let chunk = firstChunk; chunk <= lastChunk; chunk += 1) {
-      fetches[chunk - firstChunk] = this._getChunk(key, chunk).then(data => ({
-        data,
-        chunkNumber: chunk,
-      }))
+      fetches[chunk - firstChunk] = this._getChunk(key, chunk).then(
+        response => ({
+          headers: response.headers,
+          buffer: response.buffer,
+          chunkNumber: chunk,
+        }),
+      )
     }
 
     // return a "composite buffer" that lets the array of chunks be accessed like a flat buffer
-    const chunks = await Promise.all(fetches)
-    const chunksOffset = position - chunks[0].chunkNumber * this.chunkSize
-    return new Proxy(
-      chunks,
-      new CompositeBufferProxyHandler(chunksOffset, this.chunkSize, length),
-    )
+    const chunkResponses = await Promise.all(fetches)
+    const chunksOffset =
+      position - chunkResponses[0].chunkNumber * this.chunkSize
+    return {
+      headers: this._makeHeaders(
+        chunkResponses[0].headers,
+        position,
+        position + length - 1,
+      ),
+      buffer: new Proxy(
+        chunkResponses.map(res => res.buffer),
+        new CompositeBufferProxyHandler(chunksOffset, this.chunkSize, length),
+      ),
+    }
+  }
+
+  _makeHeaders(originalHeaders, newStart, newEnd) {
+    const newHeaders = Object.assign({}, originalHeaders || {})
+    newHeaders['content-length'] = newEnd - newStart
+    const oldContentRange = newHeaders['content-range'] || ''
+    const match = oldContentRange.match(/\d+-\d+\/(\d+)/)
+    if (match) {
+      newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
+      newHeaders['x-resource-length'] = match[1]
+    }
+    return newHeaders
   }
 
   async _getChunk(key, chunkNumber) {
