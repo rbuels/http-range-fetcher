@@ -1,5 +1,5 @@
-const BufferCache = require('./bufferCache')
+const HttpRangeCache = require('./httpRangeCache')
 
 module.exports = {
-  BufferCache,
+  HttpRangeCache,
 }

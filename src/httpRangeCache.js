@@ -46,9 +46,10 @@ function crossFetchBinaryRange(url, start, end) {
  * smart cache that fetches chunks of remote files.
  * caches chunks in an LRU cache, and aggregates upstream fetches
  */
-class HTTPRangeCache {
+class HttpRangeCache {
   /**
-   * @param {object} args
+   * @param {object} args the arguments object
+   * @param {number} [args.fetch] callback with signature `(key, start, end) => Promise({ headers, buffer })`
    * @param {number} [args.size] size in bytes of cache to keep
    * @param {number} [args.chunkSize] size in bytes of cached chunks
    * @param {number} [args.aggregationTime] time in ms over which to pool requests before dispatching them
@@ -70,6 +71,13 @@ class HTTPRangeCache {
     this.cacheSemantics = new CacheSemantics({ minimumTTL })
   }
 
+  /**
+   * Fetch a range of a remote resource.
+   * @param {string} key the resource's unique identifier, this would usually be a URL.
+   * This is passed along to the fetch callback.
+   * @param {number} position offset in the file at which to start fetching
+   * @param {number} length number of bytes to fetch
+   */
   async get(key, position, length) {
     // calculate the list of chunks involved in this fetch
     const firstChunk = Math.floor(position / this.chunkSize)
@@ -145,4 +153,4 @@ class HTTPRangeCache {
   }
 }
 
-module.exports = HTTPRangeCache
+module.exports = HttpRangeCache

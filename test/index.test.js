@@ -1,6 +1,6 @@
 const promisify = require('util.promisify')
 const _ = require('lodash')
-const { BufferCache } = require('../src/index')
+const { HttpRangeCache } = require('../src/index')
 
 describe('super duper cache', () => {
   jest.setTimeout(500)
@@ -10,7 +10,7 @@ describe('super duper cache', () => {
       responseDate: new Date(),
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     })
-    const cache = new BufferCache({ fetch, aggregationTime: 0 })
+    const cache = new HttpRangeCache({ fetch, aggregationTime: 0 })
     const got = await cache.get('http://foo.com/', 0, 10)
     expect(got[0]).toEqual(0)
     expect(got[9]).toEqual(9)
@@ -30,7 +30,7 @@ describe('super duper cache', () => {
           .map(n => add + n),
       }
     }
-    const cache = new BufferCache({ fetch, chunkSize: 10 })
+    const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
     const results = await Promise.all([
       cache.get('foo', 4, 10),
       cache.get('foo', 0, 1),

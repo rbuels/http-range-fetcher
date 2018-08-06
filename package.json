@@ -1,9 +1,9 @@
 {
-  "name": "example",
+  "name": "http-range-cache",
   "version": "0.0.1-alpha.0",
-  "description": "package template",
+  "description": "cache/aggregator for HTTP range requests",
   "license": "MIT",
-  "repository": "rbuels/example",
+  "repository": "rbuels/http-range-cache",
   "main": "dist/index.js",
   "author": {
     "name": "Robert Buels",
@@ -21,7 +21,7 @@
     "coverage": "npm test -- --coverage",
     "postcoverage": "opn coverage/lcov-report/index.html",
     "lint": "eslint src test",
-    "docs": "documentation readme src --section=API",
+    "docs": "documentation readme --shallow src/httpRangeCache.js --section=API",
     "clean": "rimraf dist",
     "prebuild": "npm run docs && npm run clean",
     "build": "babel src -d dist",
