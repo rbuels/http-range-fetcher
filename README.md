@@ -56,7 +56,7 @@ Promise.all([
 
 #### Table of Contents
 
--   [HttpRangeFetcher](#HttpRangeFetcher)
+-   [HttpRangeFetcher](#httprangefetcher)
     -   [getRange](#getrange)
     -   [stat](#stat)
     -   [reset](#reset)
