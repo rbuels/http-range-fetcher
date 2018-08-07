@@ -18,6 +18,22 @@ class CompositeBuffer {
     return this._length
   }
 
+  _getConcatenation(target) {
+    if (!this._concatenation) {
+      let buffers = target
+      if (this._offset) {
+        buffers = [...target]
+        buffers[0] = buffers[0].slice(this._offset)
+      }
+      this._concatenation = Buffer.concat(buffers).slice(0, this._length)
+    }
+    return this._concatenation
+  }
+
+  buffer(target) {
+    return this._getConcatenation(target).buffer
+  }
+
   static get [Symbol.species]() {
     return this
   }
@@ -28,6 +44,9 @@ class CompositeBuffer {
   get(target, name) {
     if (name === 'length') return this.length(target)
     if (name === 'constructor') return CompositeBuffer.prototype.constructor
+    if (name === 'buffer') return this.buffer(target)
+    if (name === 'byteOffset') return this._getConcatenation().byteOffset
+    if (name === 'byteLength') return this._getConcatenation().byteLength
 
     if (
       name.charCodeAt &&

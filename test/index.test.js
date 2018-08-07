@@ -21,13 +21,15 @@ describe('super duper cache', () => {
     const calls = []
     const fetch = async (url, start, end) => {
       calls.push([url, start, end])
-      const add = url === 'bar' ? 1000 : 0
+      const add = url === 'bar' ? 100 : 0
       return {
-        headers: { 'content-range': `${start}-${end}/500` },
+        headers: { 'content-range': `${start}-${end}/256` },
         responseDate: new Date(),
-        buffer: _.range(0, 500)
-          .slice(start, end)
-          .map(n => add + n),
+        buffer: Buffer.from(
+          _.range(0, 256)
+            .slice(start, end)
+            .map(n => add + n),
+        ),
       }
     }
     const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
@@ -39,38 +41,48 @@ describe('super duper cache', () => {
     ])
     await promisify(setTimeout)(150)
     const got2 = await cache.getRange('foo', 0, 3)
-    const got3 = await cache.getRange('foo', 400, 10)
+    const got3 = await cache.getRange('foo', 200, 10)
     expect(JSON.parse(JSON.stringify(results.map(r => r.buffer)))).toEqual([
       [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       [0],
-      [1000, 1001, 1002, 1003, 1004],
+      [100, 101, 102, 103, 104],
       [80, 81, 82, 83, 84, 85, 86, 87, 88, 89],
     ])
+
     expect(got2.headers).toEqual({
       'content-length': 2,
-      'content-range': '0-1/500',
-      'x-resource-length': '500',
+      'content-range': '0-1/256',
+      'x-resource-length': '256',
     })
     expect(got2.buffer).toEqual([0, 1, 2])
+
+    // check that we can convert the butter to an arraybuffer OK
+    const byteArray = new Uint8Array(toArrayBuffer(got2.buffer))
+    expect(byteArray[0]).toEqual(0)
+    expect(byteArray[1]).toEqual(1)
+    expect(byteArray[2]).toEqual(2)
+    expect(byteArray.length).toEqual(3)
+    expect(Array.from(byteArray)).toEqual([0, 1, 2])
+
     expect(got3.buffer).toEqual([
-      400,
-      401,
-      402,
-      403,
-      404,
-      405,
-      406,
-      407,
-      408,
-      409,
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      209,
     ])
-    expect(await cache.stat('foo')).toEqual({ size: 500 })
-    expect(calls).toEqual([['foo', 0, 90], ['bar', 0, 10], ['foo', 400, 410]])
-    expect(await cache.stat('donk')).toEqual({ size: 500 })
+    expect(await cache.stat('foo')).toEqual({ size: 256 })
+    expect(calls).toEqual([['foo', 0, 90], ['bar', 0, 10], ['foo', 200, 210]])
+    expect(await cache.stat('donk')).toEqual({ size: 256 })
     expect(calls).toEqual([
       ['foo', 0, 90],
       ['bar', 0, 10],
-      ['foo', 400, 410],
+      ['foo', 200, 210],
       ['donk', 0, 1],
     ])
   })

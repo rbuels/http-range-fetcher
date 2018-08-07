@@ -1,44 +1,10 @@
 const LRU = require('lru-cache')
-const crossFetch = require('cross-fetch')
 
 const { CacheSemantics } = require('./cacheSemantics')
 const CompositeBufferProxyHandler = require('./compositeBufferProxyHandler')
 const AggregatingFetcher = require('./aggregatingFetcher')
 
-function crossFetchBinaryRange(url, start, end) {
-  const requestDate = new Date()
-  return crossFetch({
-    method: 'GET',
-    url,
-    headers: { range: `${start}-${end}` },
-  }).then(res => {
-    const responseDate = new Date()
-    if (res.status !== 206 && res.status !== 200)
-      throw new Error(
-        `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
-      )
-
-    if (res.status === 200) {
-      // TODO: check that the response satisfies the byte range,
-      // and is not too big (check maximum size),
-      // because we actually ended up getting served the whole file
-      throw new Error(
-        `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
-      )
-    }
-
-    const bufPromise = res.buffer
-      ? res.buffer()
-      : res.arrayBuffer().then(arrayBuffer => Buffer.from(arrayBuffer))
-    // return the response headers, and the data buffer
-    return bufPromise.then(buffer => ({
-      headers: res.headers,
-      requestDate,
-      responseDate,
-      buffer,
-    }))
-  })
-}
+const crossFetchBinaryRange = require('./crossFetchBinaryRange')
 
 // TODO: fire events when a remote file is detected as having been changed
 
@@ -84,7 +50,7 @@ class HttpRangeCache {
       const stat = await this.stat(key)
       if (stat.size === undefined)
         throw new Error(
-          `length not specified, and good not determine size of the remote file`,
+          `length not specified, and could not determine size of the remote file`,
         )
       length = stat.size - position
     }
