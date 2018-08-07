@@ -1,4 +1,3 @@
-const promisify = require('util.promisify')
 const _ = require('lodash')
 const { HttpRangeFetcher } = require('../src/index')
 
@@ -8,6 +7,8 @@ function toArrayBuffer(buffer) {
     buffer.byteOffset + buffer.byteLength,
   )
 }
+
+const timeout = ms => new Promise((res, rej) => setTimeout(res, ms))
 
 describe('super duper cache', () => {
   jest.setTimeout(500)
@@ -46,7 +47,7 @@ describe('super duper cache', () => {
       cache.getRange('bar', 0, 5),
       cache.getRange('foo', 80, 10),
     ])
-    await promisify(setTimeout)(150)
+    await timeout(150)
     const got2 = await cache.getRange('foo', 0, 3)
     const got3 = await cache.getRange('foo', 200, 10)
     expect(JSON.parse(JSON.stringify(results.map(r => r.buffer)))).toEqual([
