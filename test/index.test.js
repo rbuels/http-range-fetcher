@@ -34,7 +34,7 @@ describe('super duper cache', () => {
         responseDate: new Date(),
         buffer: Buffer.from(
           _.range(0, 256)
-            .slice(start, end)
+            .slice(start, end + 1)
             .map(n => add + n),
         ),
       }
@@ -84,13 +84,13 @@ describe('super duper cache', () => {
       209,
     ])
     expect(await cache.stat('foo')).toEqual({ size: 256 })
-    expect(calls).toEqual([['foo', 0, 90], ['bar', 0, 10], ['foo', 200, 210]])
+    expect(calls).toEqual([['foo', 0, 89], ['bar', 0, 9], ['foo', 200, 209]])
     expect(await cache.stat('donk')).toEqual({ size: 256 })
     expect(calls).toEqual([
-      ['foo', 0, 90],
-      ['bar', 0, 10],
-      ['foo', 200, 210],
-      ['donk', 0, 1],
+      ['foo', 0, 89],
+      ['bar', 0, 9],
+      ['foo', 200, 209],
+      ['donk', 0, 0],
     ])
   })
 
@@ -101,15 +101,13 @@ describe('super duper cache', () => {
       return {
         headers: { 'content-range': `${start}-${end}/20` },
         responseDate: new Date(),
-        buffer: _.range(0, 20)
-          .slice(start, end)
-          .map(n => n),
+        buffer: Buffer.from(_.range(0, 20).slice(start, end + 1)),
       }
     }
     const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
     const got2 = await cache.getRange('foo')
     expect(got2.buffer).toEqual(_.range(0, 20))
-    expect(calls).toEqual([['foo', 0, 1], ['foo', 0, 20]])
+    expect(calls).toEqual([['foo', 0, 0], ['foo', 0, 19]])
 
     cache.reset()
     calls.length = 0
@@ -118,6 +116,6 @@ describe('super duper cache', () => {
     expect(got.buffer).toEqual(_.range(0, 20))
     const got3 = await cache.getRange('foo')
     expect(got3.buffer).toEqual(_.range(0, 20))
-    expect(calls).toEqual([['foo', 0, 20]])
+    expect(calls).toEqual([['foo', 0, 19]])
   })
 })

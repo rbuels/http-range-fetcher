@@ -63,16 +63,21 @@ class HttpRangeCache {
     const fetches = new Array(lastChunk - firstChunk + 1)
     for (let chunk = firstChunk; chunk <= lastChunk; chunk += 1) {
       fetches[chunk - firstChunk] = this._getChunk(key, chunk).then(
-        response => ({
-          headers: response.headers,
-          buffer: response.buffer,
-          chunkNumber: chunk,
-        }),
+        response =>
+          response && {
+            headers: response.headers,
+            buffer: response.buffer,
+            chunkNumber: chunk,
+          },
       )
     }
 
     // return a "composite buffer" that lets the array of chunks be accessed like a flat buffer
-    const chunkResponses = await Promise.all(fetches)
+    let chunkResponses = await Promise.all(fetches)
+    chunkResponses = chunkResponses.filter(r => !!r) // filter out any undefined (out of range) responses
+    if (!chunkResponses.length) {
+      return { headers: {}, buffer: Buffer.allocUnsafe(0) }
+    }
     const chunksOffset =
       position - chunkResponses[0].chunkNumber * this.chunkSize
     return {
@@ -155,11 +160,19 @@ class HttpRangeCache {
       return chunk
     }
 
-    const freshPromise = this.aggregator.fetch(
-      key,
-      chunkNumber * this.chunkSize,
-      (chunkNumber + 1) * this.chunkSize,
-    )
+    const fetchStart = chunkNumber * this.chunkSize
+    let fetchEnd = fetchStart + this.chunkSize
+
+    // clamp the end of the fetch to the size if we have a cached size for the file
+    const stat = this.stats.get(key)
+    if (stat && stat.size) {
+      if (fetchStart >= stat.size) {
+        return undefined
+      }
+      if (fetchEnd >= stat.size) fetchEnd = stat.size
+    }
+
+    const freshPromise = this.aggregator.fetch(key, fetchStart, fetchEnd)
     // if the request fails, remove its promise
     // from the cache and keep the error
     freshPromise.catch(err => {

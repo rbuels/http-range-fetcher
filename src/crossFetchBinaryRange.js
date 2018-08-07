@@ -2,7 +2,6 @@ const crossFetch = require('cross-fetch')
 
 function crossFetchBinaryRange(url, start, end) {
   const requestDate = new Date()
-  if (start >= end) debugger
   return crossFetch(url, {
     method: 'GET',
     headers: { range: `bytes=${start}-${end}` },

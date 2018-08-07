@@ -34,7 +34,7 @@ class AggregatingFetcher {
   // and then slice the result back up to satisfy
   // the individual requests
   _dispatch({ url, start, end, requests }) {
-    this.fetchCallback(url, start, end).then(
+    this.fetchCallback(url, start, end - 1).then(
       response => {
         const data = response.buffer
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
@@ -55,7 +55,7 @@ class AggregatingFetcher {
       if (!requests || !requests.length) return
       // console.log(url, requests)
       // aggregate the requests in this url's queue
-      const sortedRequests = requests.sort((a, b) => a[0] - b[0])
+      const sortedRequests = requests.sort((a, b) => a.start - b.start)
       let currentRequestGroup
       do {
         const next = sortedRequests.shift()
