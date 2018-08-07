@@ -23,7 +23,7 @@ describe('super duper cache', () => {
       calls.push([url, start, end])
       const add = url === 'bar' ? 1000 : 0
       return {
-        headers: { 'content-range': `${start}-${end}/501` },
+        headers: { 'content-range': `${start}-${end}/500` },
         responseDate: new Date(),
         buffer: _.range(0, 500)
           .slice(start, end)
@@ -48,8 +48,8 @@ describe('super duper cache', () => {
     ])
     expect(got2.headers).toEqual({
       'content-length': 2,
-      'content-range': '0-1/501',
-      'x-resource-length': '501',
+      'content-range': '0-1/500',
+      'x-resource-length': '500',
     })
     expect(got2.buffer).toEqual([0, 1, 2])
     expect(got3.buffer).toEqual([
@@ -64,14 +64,41 @@ describe('super duper cache', () => {
       408,
       409,
     ])
-    expect(await cache.stat('foo')).toEqual({ size: 501 })
+    expect(await cache.stat('foo')).toEqual({ size: 500 })
     expect(calls).toEqual([['foo', 0, 90], ['bar', 0, 10], ['foo', 400, 410]])
-    expect(await cache.stat('donk')).toEqual({ size: 501 })
+    expect(await cache.stat('donk')).toEqual({ size: 500 })
     expect(calls).toEqual([
       ['foo', 0, 90],
       ['bar', 0, 10],
       ['foo', 400, 410],
       ['donk', 0, 1],
     ])
+  })
+
+  it('can fetch a whole file', async () => {
+    const calls = []
+    const fetch = async (url, start, end) => {
+      calls.push([url, start, end])
+      return {
+        headers: { 'content-range': `${start}-${end}/20` },
+        responseDate: new Date(),
+        buffer: _.range(0, 20)
+          .slice(start, end)
+          .map(n => n),
+      }
+    }
+    const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
+    const got2 = await cache.getRange('foo')
+    expect(got2.buffer).toEqual(_.range(0, 20))
+    expect(calls).toEqual([['foo', 0, 1], ['foo', 0, 20]])
+
+    cache.reset()
+    calls.length = 0
+
+    const got = await cache.getRange('foo', 0, 20)
+    expect(got.buffer).toEqual(_.range(0, 20))
+    const got3 = await cache.getRange('foo')
+    expect(got3.buffer).toEqual(_.range(0, 20))
+    expect(calls).toEqual([['foo', 0, 20]])
   })
 })

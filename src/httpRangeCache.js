@@ -76,10 +76,19 @@ class HttpRangeCache {
    * Fetch a range of a remote resource.
    * @param {string} key the resource's unique identifier, this would usually be a URL.
    * This is passed along to the fetch callback.
-   * @param {number} position offset in the file at which to start fetching
-   * @param {number} length number of bytes to fetch
+   * @param {number} [position] offset in the file at which to start fetching
+   * @param {number} [length] number of bytes to fetch, defaults to the remainder of the file
    */
-  async getRange(key, position, length) {
+  async getRange(key, position = 0, length) {
+    if (length === undefined) {
+      const stat = await this.stat(key)
+      if (stat.size === undefined)
+        throw new Error(
+          `length not specified, and good not determine size of the remote file`,
+        )
+      length = stat.size - position
+    }
+
     // calculate the list of chunks involved in this fetch
     const firstChunk = Math.floor(position / this.chunkSize)
     const lastChunk = Math.floor((position + length - 1) / this.chunkSize)
@@ -217,6 +226,14 @@ class HttpRangeCache {
     if (this.chunkCache.get(key) === cachedPromise) {
       this.chunkCache.del(key)
     }
+  }
+
+  /**
+   * Throw away all cached data, resetting the cache.
+   */
+  reset() {
+    this.stats.reset()
+    this.chunkCache.reset()
   }
 }
 

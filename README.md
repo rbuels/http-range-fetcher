@@ -54,6 +54,7 @@ Promise.all([
 -   [HttpRangeCache](#httprangecache)
     -   [getRange](#getrange)
     -   [stat](#stat)
+    -   [reset](#reset)
 
 ### HttpRangeCache
 
@@ -78,13 +79,13 @@ Fetch a range of a remote resource.
 
 -   `key` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the resource's unique identifier, this would usually be a URL.
     This is passed along to the fetch callback.
--   `position` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** offset in the file at which to start fetching
--   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** number of bytes to fetch
+-   `position` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** offset in the file at which to start fetching (optional, default `0`)
+-   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** number of bytes to fetch, defaults to the remainder of the file
 
 #### stat
 
 Fetches the first few bytes of the remote file (if necessary) and uses
-the returned headers to populate a `fs`-compatible stat object.
+the returned headers to populate a `fs`-like stat object.
 
 Currently, this attempts to set `size`, `mtime`, and `mtimeMs`, if
 the information is available from HTTP headers.
@@ -93,7 +94,11 @@ the information is available from HTTP headers.
 
 -   `key` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
-Returns **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a stats object
+
+#### reset
+
+Throw away all cached data, resetting the cache.
 
 ## Academic Use
 
