@@ -2,6 +2,13 @@ const promisify = require('util.promisify')
 const _ = require('lodash')
 const { HttpRangeCache } = require('../src/index')
 
+function toArrayBuffer(buffer) {
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  )
+}
+
 describe('super duper cache', () => {
   jest.setTimeout(500)
   it(`can fetch a single chunk`, async () => {
