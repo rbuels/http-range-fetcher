@@ -4,7 +4,8 @@
 [![Build Status](https://img.shields.io/travis/rbuels/http-range-fetcher/master.svg?style=flat-square)](https://travis-ci.org/rbuels/http-range-fetcher) 
 
 Cache/manager for HTTP byte-range requests that merges requests together and caches results.
-Designed for applications that request lots of small byte ranges over HTTP.
+Designed for applications that request lots of small byte ranges over HTTP that are often adjacent
+to each other.
 
 Uses `cross-fetch` in the backend, so it works either in node or webpack/browserify. Respects
 HTTP caching semantics, with the exception of setting a default minimum TTL of 1 second on
@@ -69,12 +70,11 @@ caches chunks in an LRU cache, and aggregates upstream fetches
 **Parameters**
 
 -   `$0` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `$0.fetch`   (optional, default `crossFetchBinaryRange`)
-    -   `$0.size`   (optional, default `10000000`)
-    -   `$0.chunkSize`   (optional, default `32768`)
-    -   `$0.aggregationTime`   (optional, default `100`)
-    -   `$0.minimumTTL`   (optional, default `1000`)
--   `args` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the arguments object
+    -   `$0.fetch`   (optional, default `crossFetchBinaryRange`) callback with signature `(key, start, end) => Promise({ headers, buffer })`
+    -   `$0.size`   (optional, default `10000000`) size in bytes of cache to keep
+    -   `$0.chunkSize`   (optional, default `32768`) size in bytes of cached chunks
+    -   `$0.aggregationTime`   (optional, default `100`) time in ms over which to pool requests before dispatching them
+    -   `$0.minimumTTL`   (optional, default `1000`) time in ms a non-cacheable response will still be cached
 
 #### getRange
 
