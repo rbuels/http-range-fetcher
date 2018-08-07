@@ -8,7 +8,7 @@ function toArrayBuffer(buffer) {
   )
 }
 
-const timeout = ms => new Promise((res, rej) => setTimeout(res, ms))
+const timeout = ms => new Promise(res => setTimeout(res, ms))
 
 describe('super duper cache', () => {
   jest.setTimeout(500)
@@ -50,7 +50,7 @@ describe('super duper cache', () => {
     await timeout(150)
     const got2 = await cache.getRange('foo', 0, 3)
     const got3 = await cache.getRange('foo', 200, 10)
-    expect(JSON.parse(JSON.stringify(results.map(r => r.buffer)))).toEqual([
+    expect(results.map(r => [...new Uint8Array(r.buffer)])).toEqual([
       [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       [0],
       [100, 101, 102, 103, 104],
@@ -62,7 +62,7 @@ describe('super duper cache', () => {
       'content-range': '0-1/256',
       'x-resource-length': '256',
     })
-    expect(got2.buffer).toEqual([0, 1, 2])
+    expect([...new Uint8Array(got2.buffer)]).toEqual([0, 1, 2])
 
     // check that we can convert the butter to an arraybuffer OK
     const byteArray = new Uint8Array(toArrayBuffer(got2.buffer))
@@ -72,7 +72,7 @@ describe('super duper cache', () => {
     expect(byteArray.length).toEqual(3)
     expect(Array.from(byteArray)).toEqual([0, 1, 2])
 
-    expect(got3.buffer).toEqual([
+    expect([...new Uint8Array(got3.buffer)]).toEqual([
       200,
       201,
       202,
@@ -107,16 +107,16 @@ describe('super duper cache', () => {
     }
     const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
     const got2 = await cache.getRange('foo')
-    expect(got2.buffer).toEqual(_.range(0, 20))
+    expect([...new Uint8Array(got2.buffer)]).toEqual(_.range(0, 20))
     expect(calls).toEqual([['foo', 0, 0], ['foo', 0, 19]])
 
     cache.reset()
     calls.length = 0
 
     const got = await cache.getRange('foo', 0, 20)
-    expect(got.buffer).toEqual(_.range(0, 20))
+    expect([...new Uint8Array(got.buffer)]).toEqual(_.range(0, 20))
     const got3 = await cache.getRange('foo')
-    expect(got3.buffer).toEqual(_.range(0, 20))
+    expect([...new Uint8Array(got3.buffer)]).toEqual(_.range(0, 20))
     expect(calls).toEqual([['foo', 0, 19]])
   })
 })

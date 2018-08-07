@@ -1,7 +1,6 @@
 const LRU = require('lru-cache')
 
 const { CacheSemantics } = require('./cacheSemantics')
-const CompositeBufferProxyHandler = require('./compositeBufferProxyHandler')
 const AggregatingFetcher = require('./aggregatingFetcher')
 
 const crossFetchBinaryRange = require('./crossFetchBinaryRange')
@@ -86,11 +85,28 @@ class HttpRangeFetcher {
         position,
         position + length - 1,
       ),
-      buffer: new Proxy(
-        chunkResponses.map(res => res.buffer),
-        new CompositeBufferProxyHandler(chunksOffset, this.chunkSize, length),
-      ),
+      buffer: this._makeBuffer(chunkResponses, chunksOffset, length),
     }
+  }
+
+  _makeBuffer(chunkResponses, chunksOffset, length) {
+    if (chunkResponses.length === 1) {
+      return chunkResponses[0].buffer.slice(chunksOffset, chunksOffset + length)
+    } else if (chunkResponses.length === 0) {
+      return Buffer.allocUnsafe(0)
+    }
+    // 2 or more buffers
+    const buffers = chunkResponses.map(r => r.buffer)
+    const first = buffers.shift().slice(chunksOffset)
+    let last = buffers.pop()
+    const trimEnd =
+      first.length +
+      buffers.reduce((sum, buf) => sum + buf.length, 0) +
+      last.length -
+      length
+    if (trimEnd < 0) throw new Error('assertion failed')
+    last = last.slice(0, last.length - trimEnd)
+    return Buffer.concat([first, ...buffers, last])
   }
 
   /**
