@@ -99,12 +99,14 @@ class HttpRangeFetcher {
     const buffers = chunkResponses.map(r => r.buffer)
     const first = buffers.shift().slice(chunksOffset)
     let last = buffers.pop()
-    const trimEnd =
+    let trimEnd =
       first.length +
       buffers.reduce((sum, buf) => sum + buf.length, 0) +
       last.length -
       length
-    if (trimEnd < 0) throw new Error('assertion failed')
+    if (trimEnd < 0) {
+      trimEnd = 0
+    }
     last = last.slice(0, last.length - trimEnd)
     return Buffer.concat([first, ...buffers, last])
   }
@@ -122,9 +124,9 @@ class HttpRangeFetcher {
   async stat(key) {
     let stat = this.stats.get(key)
     if (!stat) {
-      const res = await this.aggregator.fetch(key, 0, 1)
-      stat = this._headersToStats(res)
-      this.stats.set(key, stat)
+      await this._getChunk(key, 0)
+      stat = this.stats.get(key)
+      if (!stat) throw new Error(`failed to retrieve file size for ${key}`)
     }
     return stat
   }

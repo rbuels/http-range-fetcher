@@ -91,7 +91,7 @@ describe('super duper cache', () => {
       ['foo', 0, 89],
       ['bar', 0, 9],
       ['foo', 200, 209],
-      ['donk', 0, 0],
+      ['donk', 0, 9],
     ])
   })
 
@@ -108,7 +108,7 @@ describe('super duper cache', () => {
     const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
     const got2 = await cache.getRange('foo')
     expect([...new Uint8Array(got2.buffer)]).toEqual(_.range(0, 20))
-    expect(calls).toEqual([['foo', 0, 0], ['foo', 0, 19]])
+    expect(calls).toEqual([['foo', 0, 9], ['foo', 10, 19]])
 
     cache.reset()
     calls.length = 0
