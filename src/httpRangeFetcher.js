@@ -12,7 +12,7 @@ const crossFetchBinaryRange = require('./crossFetchBinaryRange')
  * smart cache that fetches chunks of remote files.
  * caches chunks in an LRU cache, and aggregates upstream fetches
  */
-class HttpRangeCache {
+class HttpRangeFetcher {
   /**
    * @param {object} args the arguments object
    * @param {number} [args.fetch] callback with signature `(key, start, end) => Promise({ headers, buffer })`
@@ -216,4 +216,4 @@ class HttpRangeCache {
   }
 }
 
-module.exports = HttpRangeCache
+module.exports = HttpRangeFetcher

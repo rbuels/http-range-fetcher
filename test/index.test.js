@@ -1,6 +1,6 @@
 const promisify = require('util.promisify')
 const _ = require('lodash')
-const { HttpRangeCache } = require('../src/index')
+const { HttpRangeFetcher } = require('../src/index')
 
 function toArrayBuffer(buffer) {
   return buffer.buffer.slice(
@@ -17,7 +17,7 @@ describe('super duper cache', () => {
       responseDate: new Date(),
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     })
-    const cache = new HttpRangeCache({ fetch, aggregationTime: 0 })
+    const cache = new HttpRangeFetcher({ fetch, aggregationTime: 0 })
     const got = await cache.getRange('http://foo.com/', 0, 10)
     expect(got.buffer[0]).toEqual(0)
     expect(got.buffer[9]).toEqual(9)
@@ -39,7 +39,7 @@ describe('super duper cache', () => {
         ),
       }
     }
-    const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
+    const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
     const results = await Promise.all([
       cache.getRange('foo', 4, 10),
       cache.getRange('foo', 0, 1),
@@ -104,7 +104,7 @@ describe('super duper cache', () => {
         buffer: Buffer.from(_.range(0, 20).slice(start, end + 1)),
       }
     }
-    const cache = new HttpRangeCache({ fetch, chunkSize: 10 })
+    const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
     const got2 = await cache.getRange('foo')
     expect(got2.buffer).toEqual(_.range(0, 20))
     expect(calls).toEqual([['foo', 0, 0], ['foo', 0, 19]])

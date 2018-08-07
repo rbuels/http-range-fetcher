@@ -1,5 +1,5 @@
-const HttpRangeCache = require('./httpRangeCache')
+const HttpRangeFetcher = require('./httpRangeFetcher')
 
 module.exports = {
-  HttpRangeCache,
+  HttpRangeFetcher,
 }

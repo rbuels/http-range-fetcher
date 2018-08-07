@@ -1,21 +1,23 @@
-# http-range-cache
+# http-range-fetcher
 
-[![NPM version](https://img.shields.io/npm/v/http-range-cache.svg?style=flat-square)](https://npmjs.org/package/http-range-cache)
-[![Build Status](https://img.shields.io/travis/rbuels/http-range-cache/master.svg?style=flat-square)](https://travis-ci.org/rbuels/http-range-cache) 
+[![NPM version](https://img.shields.io/npm/v/http-range-fetcher.svg?style=flat-square)](https://npmjs.org/package/http-range-fetcher)
+[![Build Status](https://img.shields.io/travis/rbuels/http-range-fetcher/master.svg?style=flat-square)](https://travis-ci.org/rbuels/http-range-fetcher) 
 
-Cache/manager for HTTP byte-range requests that aggregates requests together and caches results.
+Cache/manager for HTTP byte-range requests that merges requests together and caches results.
 Designed for applications that request lots of small byte ranges over HTTP.
+
+Uses `cross-fetch` in the backend, so it works either in node or webpack/browserify.
 
 ## Install
 
-    $ npm install --save http-range-cache
+    $ npm install --save http-range-fetcher
 
 ## Usage
 
 ```js
-const { HttpRangeCache } = require('http-range-cache')
+const { HttpRangeFetcher } = require('http-range-fetcher')
 
-const cache = new HttpRangeCache({})
+const cache = new HttpRangeFetcher({})
 cache.getRange('http://foo.bar/baz.bam', 20, 10)
 .then( response => {
   assert(response.buffer.length === 10)
@@ -51,12 +53,12 @@ Promise.all([
 
 #### Table of Contents
 
--   [HttpRangeCache](#httprangecache)
+-   [HttpRangeFetcher](#HttpRangeFetcher)
     -   [getRange](#getrange)
     -   [stat](#stat)
     -   [reset](#reset)
 
-### HttpRangeCache
+### HttpRangeFetcher
 
 smart cache that fetches chunks of remote files.
 caches chunks in an LRU cache, and aggregates upstream fetches

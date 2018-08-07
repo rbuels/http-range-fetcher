@@ -1,9 +1,9 @@
 {
-  "name": "http-range-cache",
+  "name": "http-range-fetcher",
   "version": "0.0.1-alpha.0",
-  "description": "cache/aggregator for HTTP range requests",
+  "description": "caching, aggregating fetch manager for doing lots of HTTP range requests",
   "license": "MIT",
-  "repository": "rbuels/http-range-cache",
+  "repository": "rbuels/http-range-fetcher",
   "main": "dist/index.js",
   "author": {
     "name": "Robert Buels",
@@ -21,7 +21,7 @@
     "coverage": "npm test -- --coverage",
     "postcoverage": "opn coverage/lcov-report/index.html",
     "lint": "eslint src test",
-    "docs": "documentation readme --shallow src/httpRangeCache.js --section=API",
+    "docs": "documentation readme --shallow src/HttpRangeFetcher.js --section=API",
     "clean": "rimraf dist",
     "prebuild": "npm run docs && npm run clean",
     "build": "babel src -d dist",
