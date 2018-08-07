@@ -75,6 +75,8 @@ caches chunks in an LRU cache, and aggregates upstream fetches
     -   `$0.chunkSize`   (optional, default `32768`) size in bytes of cached chunks
     -   `$0.aggregationTime`   (optional, default `100`) time in ms over which to pool requests before dispatching them
     -   `$0.minimumTTL`   (optional, default `1000`) time in ms a non-cacheable response will still be cached
+    -   `$0.maxFetchSize`   (optional, default `chunkSize * 4`) maximum size of an aggregated request
+    -   `$0.maxExtraFetch`   (optional, default `chunkSize`) max number of additional bytes to fetch when aggregating requests that don't actually overlap
 
 #### getRange
 

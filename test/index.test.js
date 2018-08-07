@@ -40,7 +40,11 @@ describe('super duper cache', () => {
         ),
       }
     }
-    const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
+    const cache = new HttpRangeFetcher({
+      fetch,
+      chunkSize: 10,
+      maxExtraFetch: 20000,
+    })
     const results = await Promise.all([
       cache.getRange('foo', 4, 10),
       cache.getRange('foo', 0, 1),

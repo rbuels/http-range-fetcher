@@ -19,6 +19,9 @@ class HttpRangeFetcher {
    * @param {number} [args.chunkSize] size in bytes of cached chunks
    * @param {number} [args.aggregationTime] time in ms over which to pool requests before dispatching them
    * @param {number} [args.minimumTTL] time in ms a non-cacheable response will be cached
+   * @param {number} [args.maxFetchSize] maximum size of an aggregated request
+   * @param {number} [args.maxExtraFetch] max number of additional bytes to fetch when aggregating requests
+   * that don't actually overlap
    */
   constructor({
     fetch = crossFetchBinaryRange,
@@ -26,10 +29,14 @@ class HttpRangeFetcher {
     chunkSize = 32768,
     aggregationTime = 100,
     minimumTTL = 1000,
+    maxFetchSize = chunkSize * 4,
+    maxExtraFetch = chunkSize,
   }) {
     this.aggregator = new AggregatingFetcher({
       fetch,
       frequency: aggregationTime,
+      maxFetchSize,
+      maxExtraSize: maxExtraFetch,
     })
     this.chunkSize = chunkSize
     this.chunkCache = LRU({ max: Math.floor(size / chunkSize) })
