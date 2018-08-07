@@ -23,7 +23,7 @@
     "lint": "eslint src test",
     "docs": "documentation readme --shallow src/HttpRangeFetcher.js --section=API",
     "clean": "rimraf dist",
-    "prebuild": "npm run docs && npm run clean",
+    "prebuild": "npm run clean",
     "build": "babel src -d dist",
     "watch": "npm-watch",
     "prepublishOnly": "npm run lint && npm test && npm run build",
