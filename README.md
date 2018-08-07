@@ -31,7 +31,7 @@ cache.getRange('http://foo.bar/baz.bam', 20, 10)
   // to match the requested range, and it adds a X-Resource-Length header that
   // conveniently gives the total length of the remote resource so you don't
   // have to parse the Content-Range header.
-  assert(response.headers['x-resource-length'] === 23422)
+  assert(response.headers['x-resource-length'] === '23422')
 })
 
 // these will be aggregated behind the scenes
