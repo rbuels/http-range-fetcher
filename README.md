@@ -87,6 +87,8 @@ Fetch a range of a remote resource.
 -   `position` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** offset in the file at which to start fetching (optional, default `0`)
 -   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** number of bytes to fetch, defaults to the remainder of the file
 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a response object containing `{ headers, buffer }`
+
 #### stat
 
 Fetches the first few bytes of the remote file (if necessary) and uses
@@ -99,7 +101,7 @@ the information is available from HTTP headers.
 
 -   `key` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a stats object
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a stats object like `{ size, mtime, mtimeMs }`
 
 #### reset
 
