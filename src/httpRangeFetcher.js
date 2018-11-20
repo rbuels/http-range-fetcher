@@ -1,4 +1,4 @@
-const LRU = require('lru-cache')
+const LRU = require('quick-lru')
 
 const { CacheSemantics } = require('./cacheSemantics')
 const AggregatingFetcher = require('./aggregatingFetcher')
@@ -39,9 +39,9 @@ class HttpRangeFetcher {
       maxExtraSize: maxExtraFetch,
     })
     this.chunkSize = chunkSize
-    this.chunkCache = LRU({ max: Math.floor(size / chunkSize) })
+    this.chunkCache = new LRU({ maxSize: Math.floor(size / chunkSize) || 1 })
     this.cacheSemantics = new CacheSemantics({ minimumTTL })
-    this.stats = LRU({ max: 20 })
+    this.stats = new LRU({ maxSize: 20 })
   }
 
   /**
