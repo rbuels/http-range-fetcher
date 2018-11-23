@@ -236,8 +236,8 @@ class HttpRangeFetcher {
    * Throw away all cached data, resetting the cache.
    */
   reset() {
-    this.stats.reset()
-    this.chunkCache.reset()
+    this.stats.clear()
+    this.chunkCache.clear()
   }
 }
 
