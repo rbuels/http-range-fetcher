@@ -228,7 +228,7 @@ class HttpRangeFetcher {
   // have been overwritten sometime while the promise was in flight
   _uncacheIfSame(key, cachedPromise) {
     if (this.chunkCache.get(key) === cachedPromise) {
-      this.chunkCache.del(key)
+      this.chunkCache.delete(key)
     }
   }
 
