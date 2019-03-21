@@ -1,4 +1,8 @@
 const _ = require('lodash')
+const {
+  AbortController,
+} = require('abortcontroller-polyfill/dist/cjs-ponyfill')
+
 const { HttpRangeFetcher } = require('../src/index')
 
 function toArrayBuffer(buffer) {
@@ -122,5 +126,31 @@ describe('super duper cache', () => {
     const got3 = await cache.getRange('foo')
     expect([...new Uint8Array(got3.buffer)]).toEqual(_.range(0, 20))
     expect(calls).toEqual([['foo', 0, 19]])
+  })
+
+  it(`can abort a fetch`, async () => {
+    expect.assertions(2)
+    const ab = new AbortController()
+    const calls = []
+    const fetch = async (url, start, end, options) => {
+      calls.push([url, start, end, options])
+      await timeout(200)
+      if (options.signal.aborted) {
+        throw new Error('aborted', 'AbortError')
+      }
+      return {
+        headers: {},
+        responseDate: new Date(),
+        buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+      }
+    }
+    const cache = new HttpRangeFetcher({ fetch, aggregationTime: 0 })
+    const get = cache.getRange('http://foo.com/', 0, 10, { signal: ab.signal })
+    await timeout(100)
+    ab.abort()
+    // NOTE: this currently emits an unhandled rejection
+    // warning due to https://github.com/facebook/jest/issues/5311
+    await expect(get).rejects.toThrow(/aborted/)
+    expect(calls).toMatchSnapshot()
   })
 })

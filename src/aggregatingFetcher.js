@@ -1,3 +1,7 @@
+const {
+  AbortController,
+} = require('abortcontroller-polyfill/dist/cjs-ponyfill')
+
 /**
  * takes fetch requests and aggregates them at a certain time frequency
  */
@@ -30,11 +34,43 @@ class AggregatingFetcher {
     )
   }
 
+  // returns a promise that only resolves
+  // when all of the signals in the given array
+  // have fired their abort signal
+  _allSignalsFired(signals) {
+    return new Promise(resolve => {
+      let signalsLeft = signals.filter(s => !s.aborted).length
+      signals.forEach(signal => {
+        signal.addEventListener('abort', () => {
+          signalsLeft -= 1
+          if (!signalsLeft) {
+            resolve()
+          }
+        })
+      })
+    })
+  }
+
   // dispatch a request group as a single request
   // and then slice the result back up to satisfy
   // the individual requests
   _dispatch({ url, start, end, requests }) {
-    this.fetchCallback(url, start, end - 1).then(
+    // if any of the requests have an AbortSignal `signal` in their requestOptions,
+    // make our aggregating abortcontroller track it, aborting the request if
+    // all of the abort signals that are aggregated here have fired
+    const abortWholeRequest = new AbortController()
+    const signals = []
+    requests.forEach(({ requestOptions }) => {
+      if (requestOptions && requestOptions.signal)
+        signals.push(requestOptions.signal)
+    })
+    if (signals.length === requests.length) {
+      this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
+    }
+
+    this.fetchCallback(url, start, end - 1, {
+      signal: abortWholeRequest.signal,
+    }).then(
       response => {
         const data = response.buffer
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
@@ -52,23 +88,38 @@ class AggregatingFetcher {
 
   _aggregateAndDispatch() {
     Object.entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests || !requests.length) return
+      if (!requests) return
       // console.log(url, requests)
+
       // aggregate the requests in this url's queue
-      const sortedRequests = requests.sort((a, b) => a.start - b.start)
+      const sortedRequests = requests
+        .filter(
+          ({ requestOptions }) =>
+            !(
+              requestOptions &&
+              requestOptions.signal &&
+              requestOptions.signal.aborted
+            ),
+        )
+        .sort((a, b) => a.start - b.start)
+
+      requests.length = 0
+      if (!sortedRequests.length) return
+
       let currentRequestGroup
-      do {
-        const next = sortedRequests.shift()
+      for (let i = 0; i < sortedRequests.length; i += 1) {
+        const next = sortedRequests[i]
         if (
           currentRequestGroup &&
           this._canAggregate(currentRequestGroup, next)
         ) {
-          // aggregate it
+          // aggregate it into the current group
           currentRequestGroup.requests.push(next)
           currentRequestGroup.end = next.end
         } else {
           // out of range, dispatch the current request group
           if (currentRequestGroup) this._dispatch(currentRequestGroup)
+          // and start on a new one
           currentRequestGroup = {
             requests: [next],
             url,
@@ -76,8 +127,7 @@ class AggregatingFetcher {
             end: next.end,
           }
         }
-      } while (sortedRequests.length)
-
+      }
       if (currentRequestGroup) this._dispatch(currentRequestGroup)
     })
   }
@@ -92,10 +142,11 @@ class AggregatingFetcher {
    * @param {string} url
    * @param {number} start 0-based half-open
    * @param {number} end 0-based half-open
+   * @param {object} [requestOptions] options passed to the underlying fetch call
    */
-  fetch(url, start, end) {
+  fetch(url, start, end, requestOptions = {}) {
     return new Promise((resolve, reject) => {
-      this._enQueue(url, { start, end, resolve, reject })
+      this._enQueue(url, { start, end, resolve, reject, requestOptions })
       if (!this.timeout) {
         this.timeout = setTimeout(() => {
           this.timeout = undefined

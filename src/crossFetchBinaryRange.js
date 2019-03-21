@@ -1,10 +1,11 @@
 const crossFetch = require('cross-fetch')
 
-function crossFetchBinaryRange(url, start, end) {
+function crossFetchBinaryRange(url, start, end, options = {}) {
   const requestDate = new Date()
   return crossFetch(url, {
     method: 'GET',
     headers: { range: `bytes=${start}-${end}` },
+    ...options,
   }).then(res => {
     const responseDate = new Date()
     if (res.status !== 206 && res.status !== 200)

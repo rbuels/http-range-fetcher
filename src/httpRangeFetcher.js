@@ -50,8 +50,10 @@ class HttpRangeFetcher {
    * This is passed along to the fetch callback.
    * @param {number} [position] offset in the file at which to start fetching
    * @param {number} [length] number of bytes to fetch, defaults to the remainder of the file
+   * @param {object} [options] request options
+   * @param {AbortSignal} [options.signal] AbortSignal object that can be used to abort the fetch
    */
-  async getRange(key, position = 0, length) {
+  async getRange(key, position = 0, length, options = {}) {
     if (length === undefined) {
       const stat = await this.stat(key)
       if (stat.size === undefined)
@@ -68,7 +70,7 @@ class HttpRangeFetcher {
     // fetch them all as necessary
     const fetches = new Array(lastChunk - firstChunk + 1)
     for (let chunk = firstChunk; chunk <= lastChunk; chunk += 1) {
-      fetches[chunk - firstChunk] = this._getChunk(key, chunk).then(
+      fetches[chunk - firstChunk] = this._getChunk(key, chunk, options).then(
         response =>
           response && {
             headers: response.headers,
@@ -170,17 +172,28 @@ class HttpRangeFetcher {
     return newHeaders
   }
 
-  async _getChunk(key, chunkNumber) {
+  async _getChunk(key, chunkNumber, requestOptions) {
     const chunkKey = `${key}/${chunkNumber}`
     const cachedPromise = this.chunkCache.get(chunkKey)
 
     if (cachedPromise) {
-      const chunk = await cachedPromise
+      let chunk
+      let chunkAborted
+      try {
+        chunk = await cachedPromise
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // fetch was aborted
+          chunkAborted = true
+        } else {
+          throw err
+        }
+      }
       // when the cached chunk is resolved, validate it before returning it.
       // if invalid, delete it from the cache and redispatch the request
-      if (!this.cacheSemantics.cachedChunkIsValid(chunk)) {
+      if (chunkAborted || !this.cacheSemantics.cachedChunkIsValid(chunk)) {
         this._uncacheIfSame(chunkKey, cachedPromise)
-        return this._getChunk(key, chunkNumber)
+        return this._getChunk(key, chunkNumber, requestOptions)
       }
       return chunk
     }
@@ -197,7 +210,12 @@ class HttpRangeFetcher {
       if (fetchEnd >= stat.size) fetchEnd = stat.size
     }
 
-    const freshPromise = this.aggregator.fetch(key, fetchStart, fetchEnd)
+    const freshPromise = this.aggregator.fetch(
+      key,
+      fetchStart,
+      fetchEnd,
+      requestOptions,
+    )
     // if the request fails, remove its promise
     // from the cache and keep the error
     freshPromise.catch(err => {

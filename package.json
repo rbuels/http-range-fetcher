@@ -39,6 +39,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "abortcontroller-polyfill": "^1.2.9",
     "cross-fetch": "^2.2.2",
     "quick-lru": "^2.0.0"
   },
