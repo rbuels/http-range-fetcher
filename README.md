@@ -90,6 +90,8 @@ Fetch a range of a remote resource.
 -   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** number of bytes to fetch, defaults to the remainder of the file
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a response object containing `{ headers, buffer }`
+-   `options` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)?** request options (optional, default `{}`)
+    -   `options.signal` **AbortSignal?** AbortSignal object that can be used to abort the fetch
 
 #### stat
 
