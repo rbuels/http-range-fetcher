@@ -88,10 +88,11 @@ Fetch a range of a remote resource.
     This is passed along to the fetch callback.
 -   `position` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** offset in the file at which to start fetching (optional, default `0`)
 -   `length` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?** number of bytes to fetch, defaults to the remainder of the file
+-   `options` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)?** request options (optional, default `{}`)
+    -   `options.signal` **AbortSignal?** object that can be used to abort the fetch. See [AbortController on MDN](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) for details
+
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** for a response object containing `{ headers, buffer }`
--   `options` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)?** request options (optional, default `{}`)
-    -   `options.signal` **AbortSignal?** AbortSignal object that can be used to abort the fetch
 
 #### stat
 
