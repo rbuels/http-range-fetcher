@@ -13,7 +13,6 @@ it(`can abort a fetch 1`, async () => {
   async function fetch(url, start, end, options) {
     calls.push([url, start, end, options])
     if (options.signal.aborted) {
-      console.log('fetch rejecting')
       throw Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' })
     }
     return {
