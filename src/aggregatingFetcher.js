@@ -48,6 +48,8 @@ class AggregatingFetcher {
           }
         })
       })
+    }).catch(e => {
+      console.error(e)
     })
   }
 
@@ -58,6 +60,7 @@ class AggregatingFetcher {
     // if any of the requests have an AbortSignal `signal` in their requestOptions,
     // make our aggregating abortcontroller track it, aborting the request if
     // all of the abort signals that are aggregated here have fired
+
     const abortWholeRequest = new AbortController()
     const signals = []
     requests.forEach(({ requestOptions }) => {
@@ -73,6 +76,7 @@ class AggregatingFetcher {
     }).then(
       response => {
         const data = response.buffer
+
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
           // remember Buffer.slice does not copy, it creates
           // an offset child buffer pointing to the same data
@@ -82,33 +86,44 @@ class AggregatingFetcher {
           })
         })
       },
-      err => requests.forEach(({ reject }) => reject(err)),
+      err => {
+        requests.forEach(({ reject }) => reject(err))
+      },
     )
   }
 
   _aggregateAndDispatch() {
     Object.entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests) return
+      if (!requests || !requests.length) return
       // console.log(url, requests)
 
-      // aggregate the requests in this url's queue
-      const sortedRequests = requests
-        .filter(
-          ({ requestOptions }) =>
-            !(
-              requestOptions &&
-              requestOptions.signal &&
-              requestOptions.signal.aborted
-            ),
-        )
-        .sort((a, b) => a.start - b.start)
+      // we are now going to aggregate the requests in this url's queue
+      // into groups of requests that can be dispatched as one
+      const requestsToDispatch = []
+
+      // look to see if any of the requests are aborted, and if they are, just
+      // reject them now and forget about them
+      requests.forEach(request => {
+        const { requestOptions, reject } = request
+        if (
+          requestOptions &&
+          requestOptions.signal &&
+          requestOptions.signal.aborted
+        ) {
+          reject(Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' }))
+        } else {
+          requestsToDispatch.push(request)
+        }
+      })
+
+      requestsToDispatch.sort((a, b) => a.start - b.start)
 
       requests.length = 0
-      if (!sortedRequests.length) return
+      if (!requestsToDispatch.length) return
 
       let currentRequestGroup
-      for (let i = 0; i < sortedRequests.length; i += 1) {
-        const next = sortedRequests[i]
+      for (let i = 0; i < requestsToDispatch.length; i += 1) {
+        const next = requestsToDispatch[i]
         if (
           currentRequestGroup &&
           this._canAggregate(currentRequestGroup, next)
@@ -151,7 +166,7 @@ class AggregatingFetcher {
         this.timeout = setTimeout(() => {
           this.timeout = undefined
           this._aggregateAndDispatch()
-        }, this.frequency)
+        }, this.frequency || 1)
       }
     })
   }

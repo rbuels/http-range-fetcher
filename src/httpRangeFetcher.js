@@ -190,7 +190,7 @@ class HttpRangeFetcher {
         }
       }
       // when the cached chunk is resolved, validate it before returning it.
-      // if invalid, delete it from the cache and redispatch the request
+      // if invalid or aborted, delete it from the cache and redispatch the request
       if (chunkAborted || !this.cacheSemantics.cachedChunkIsValid(chunk)) {
         this._uncacheIfSame(chunkKey, cachedPromise)
         return this._getChunk(key, chunkNumber, requestOptions)
@@ -210,20 +210,18 @@ class HttpRangeFetcher {
       if (fetchEnd >= stat.size) fetchEnd = stat.size
     }
 
-    const freshPromise = this.aggregator.fetch(
-      key,
-      fetchStart,
-      fetchEnd,
-      requestOptions,
-    )
-    // if the request fails, remove its promise
-    // from the cache and keep the error
-    freshPromise.catch(err => {
-      this._uncacheIfSame(chunkKey, freshPromise)
-      throw err
-    })
+    let alreadyRejected = false
+    const freshPromise = this.aggregator
+      .fetch(key, fetchStart, fetchEnd, requestOptions)
+      .catch(err => {
+        // if the request fails, remove its promise
+        // from the cache and keep the error
+        alreadyRejected = true
+        this._uncacheIfSame(chunkKey, freshPromise)
+        throw err
+      })
 
-    this.chunkCache.set(chunkKey, freshPromise)
+    if (!alreadyRejected) this.chunkCache.set(chunkKey, freshPromise)
 
     const freshChunk = await freshPromise
 
