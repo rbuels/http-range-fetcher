@@ -54,13 +54,15 @@ it(`can abort a fetch 2`, async () => {
 })
 
 it(`can abort a fetch 3`, async () => {
-  expect.assertions(2)
+  expect.assertions(3)
   const ab = new AbortController()
   const calls = []
+  let abortCount = 0
   async function fetch(url, start, end, options) {
     calls.push([url, start, end, options])
-    await new Promise(res => process.nextTick(res))
+    await timeout(50)
     if (options.signal.aborted) {
+      abortCount += 1
       throw Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' })
     }
     return {
@@ -69,9 +71,11 @@ it(`can abort a fetch 3`, async () => {
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     }
   }
-  const cache = new HttpRangeFetcher({ fetch, aggregationTime: 0 })
+  const cache = new HttpRangeFetcher({ fetch, aggregationTime: 1 })
   const get = cache.getRange('http://foo.com/', 0, 10, { signal: ab.signal })
+  await timeout(20)
   ab.abort()
   await expect(get).rejects.toThrow(/aborted/)
   expect(calls).toMatchSnapshot()
+  expect(abortCount).toBe(1)
 })

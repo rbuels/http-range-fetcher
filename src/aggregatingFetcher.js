@@ -43,7 +43,9 @@ class AggregatingFetcher {
       signals.forEach(signal => {
         signal.addEventListener('abort', () => {
           signalsLeft -= 1
+          // console.log('aggregatingfetcher received an abort')
           if (!signalsLeft) {
+            // console.log('aggregatingfetcher aborting aggegated request')
             resolve()
           }
         })

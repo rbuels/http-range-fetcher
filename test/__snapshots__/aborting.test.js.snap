@@ -4,4 +4,15 @@ exports[`can abort a fetch 1 1`] = `Array []`;
 
 exports[`can abort a fetch 2 1`] = `Array []`;
 
-exports[`can abort a fetch 3 1`] = `Array []`;
+exports[`can abort a fetch 3 1`] = `
+Array [
+  Array [
+    "http://foo.com/",
+    0,
+    32767,
+    Object {
+      "signal": AbortSignal {},
+    },
+  ],
+]
+`;
