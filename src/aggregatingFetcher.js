@@ -1,6 +1,4 @@
-const {
-  AbortController,
-} = require('abortcontroller-polyfill/dist/cjs-ponyfill')
+import { AbortController } from './abortcontroller-ponyfill'
 
 /**
  * takes fetch requests and aggregates them at a certain time frequency
