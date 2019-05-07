@@ -1,6 +1,5 @@
-import { AbortController } from './abortcontroller-ponyfill'
 import entries from 'object.entries-ponyfill'
-
+import { AbortController } from './abortcontroller-ponyfill'
 
 /**
  * takes fetch requests and aggregates them at a certain time frequency
