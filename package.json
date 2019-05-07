@@ -42,6 +42,7 @@
     "@babel/runtime": "^7.4.4",
     "abortcontroller-polyfill": "^1.2.9",
     "cross-fetch": "^2.2.2",
+    "object.entries-ponyfill": "^1.0.1",
     "quick-lru": "^2.0.0"
   },
   "devDependencies": {
