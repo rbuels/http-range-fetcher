@@ -1,20 +1,25 @@
 {
-    "presets": [
-        ["env", {
+  "comments": true,
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
         "targets": {
-          "browsers": ["last 2 versions", "safari >= 9"],
-          "node": "6.10"
+          "node": 6,
+          "browsers": [
+            "> 0.5%",
+            "last 2 versions"
+          ]
         }
-      }]
-    ],
-    "retainLines": true,
-    "sourceMaps": true,
-    "plugins": [
-      ["transform-runtime", {
-        "helpers": true,
-        "polyfill": true,
-        "regenerator": true,
-        "moduleName": "babel-runtime"
-      }]
+      }
     ]
+  ],
+  "plugins": [
+    [
+      "@babel/transform-runtime",
+      {
+        "regenerator": true
+      }
+    ]
+  ]
 }
