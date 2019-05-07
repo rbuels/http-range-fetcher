@@ -1,6 +1,6 @@
-const {
-  AbortController,
-} = require('abortcontroller-polyfill/dist/cjs-ponyfill')
+import { AbortController } from './abortcontroller-ponyfill'
+import entries from 'object.entries-ponyfill'
+
 
 /**
  * takes fetch requests and aggregates them at a certain time frequency
@@ -95,7 +95,7 @@ class AggregatingFetcher {
   }
 
   _aggregateAndDispatch() {
-    Object.entries(this.requestQueues).forEach(([url, requests]) => {
+    entries(this.requestQueues).forEach(([url, requests]) => {
       if (!requests || !requests.length) return
       // console.log(url, requests)
 
