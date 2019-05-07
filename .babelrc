@@ -5,11 +5,11 @@
       "@babel/preset-env",
       {
         "targets": {
-          "node": 6,
           "browsers": [
-            "> 0.5%",
-            "last 2 versions"
-          ]
+            "last 2 versions",
+            "safari >= 9"
+          ],
+          "node": "6.10"
         }
       }
     ]
