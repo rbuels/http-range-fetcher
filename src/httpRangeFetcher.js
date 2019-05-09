@@ -10,7 +10,7 @@ const crossFetchBinaryRange = require('./crossFetchBinaryRange')
  * @param {Error} exception
  * @returns {boolean}
  */
-export function isAbortException(exception) {
+function isAbortException(exception) {
   return (
     // DOMException
     exception.name === 'AbortError' ||
