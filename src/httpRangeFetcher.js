@@ -5,6 +5,25 @@ const AggregatingFetcher = require('./aggregatingFetcher')
 
 const crossFetchBinaryRange = require('./crossFetchBinaryRange')
 
+/**
+ * check if the given exception was caused by an operation being intentionally aborted
+ * @param {Error} exception
+ * @returns {boolean}
+ */
+export function isAbortException(exception) {
+  return (
+    // DOMException
+    exception.name === 'AbortError' ||
+    // standard-ish non-DOM abort exception
+    // @ts-ignore
+    exception.code === 'ERR_ABORTED' ||
+    // stringified DOMException
+    exception.message === 'AbortError: aborted' ||
+    // stringified standard-ish exception
+    exception.message === 'Error: aborted'
+  )
+}
+
 // TODO: fire events when a remote file is detected as having been changed
 
 /**
@@ -182,7 +201,7 @@ class HttpRangeFetcher {
       try {
         chunk = await cachedPromise
       } catch (err) {
-        if (err.name === 'AbortError') {
+        if (isAbortException(err)) {
           // fetch was aborted
           chunkAborted = true
         } else {
@@ -233,7 +252,7 @@ class HttpRangeFetcher {
     // done after the fact because we want multiple requests
     // for the same chunk to reuse the same cached promise
     if (!this.cacheSemantics.chunkIsCacheable(freshChunk)) {
-      this._uncacheIfSame(key, freshPromise)
+      this._uncacheIfSame(chunkKey, freshPromise)
     }
 
     return freshChunk
