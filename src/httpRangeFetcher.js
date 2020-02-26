@@ -216,6 +216,8 @@ class HttpRangeFetcher {
         this._uncacheIfSame(chunkKey, cachedPromise)
         return this._getChunk(key, chunkNumber, requestOptions)
       }
+
+      this.stats.set(key, this._headersToStats(chunk))
       return chunk
     }
 
