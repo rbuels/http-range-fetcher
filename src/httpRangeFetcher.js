@@ -154,7 +154,8 @@ class HttpRangeFetcher {
   async stat(key) {
     let stat = this.stats.get(key)
     if (!stat) {
-      await this._getChunk(key, 0)
+      const chunk = await this._getChunk(key, 0)
+      this._recordStatsIfNecessary(key, chunk)
       stat = this.stats.get(key)
       if (!stat) throw new Error(`failed to retrieve file size for ${key}`)
     }
