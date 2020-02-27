@@ -217,7 +217,8 @@ class HttpRangeFetcher {
         return this._getChunk(key, chunkNumber, requestOptions)
       }
 
-      this.stats.set(key, this._headersToStats(chunk))
+      // gather the stats for the file from the headers
+      this._recordStatsIfNecessary(key, chunk)
       return chunk
     }
 
@@ -249,7 +250,7 @@ class HttpRangeFetcher {
     const freshChunk = await freshPromise
 
     // gather the stats for the file from the headers
-    this.stats.set(key, this._headersToStats(freshChunk))
+    this._recordStatsIfNecessary(key, freshChunk)
 
     // remove the promise from the cache
     // if it turns out not to be cacheable. this is
@@ -260,6 +261,11 @@ class HttpRangeFetcher {
     }
 
     return freshChunk
+  }
+
+  // if the stats for a resource haven't been recorded yet, record them
+  _recordStatsIfNecessary(key, chunk) {
+    if (!this.stats.has(key)) this.stats.set(key, this._headersToStats(chunk))
   }
 
   // delete a promise from the cache if it is still in there.
