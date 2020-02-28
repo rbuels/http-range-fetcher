@@ -1,3 +1,8 @@
+<a name="1.2.4"></a>
+## [1.2.4](https://github.com/rbuels/http-range-fetcher/compare/v1.2.3...v1.2.4) (2020-02-28)
+
+
+
 ## [1.2.2](https://github.com/rbuels/http-range-fetcher/compare/v1.2.1...v1.2.2) (2019-05-09)
 
 - Fix a chunk caching issue that was preventing aborting from working properly
