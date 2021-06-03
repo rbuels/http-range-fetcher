@@ -1,3 +1,8 @@
+<a name="1.2.5"></a>
+## [1.2.5](https://github.com/rbuels/http-range-fetcher/compare/v1.2.4...v1.2.5) (2021-06-03)
+
+
+
 <a name="1.2.4"></a>
 ## [1.2.4](https://github.com/rbuels/http-range-fetcher/compare/v1.2.3...v1.2.4) (2020-02-28)
 
