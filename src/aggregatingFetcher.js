@@ -50,6 +50,7 @@ class AggregatingFetcher {
         })
       })
     }).catch(e => {
+      // eslint-disable-next-line no-console
       console.error(e)
     })
   }
@@ -119,6 +120,7 @@ class AggregatingFetcher {
 
       requestsToDispatch.sort((a, b) => a.start - b.start)
 
+      // eslint-disable-next-line no-param-reassign
       requests.length = 0
       if (!requestsToDispatch.length) return
 

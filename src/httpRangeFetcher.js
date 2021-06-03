@@ -74,7 +74,8 @@ class HttpRangeFetcher {
    * @param {object} [options] request options
    * @param {AbortSignal} [options.signal] AbortSignal object that can be used to abort the fetch
    */
-  async getRange(key, position = 0, length, options = {}) {
+  async getRange(key, position = 0, requestedLength, options = {}) {
+    let length = requestedLength
     if (length === undefined) {
       const stat = await this.stat(key)
       if (stat.size === undefined)
@@ -189,6 +190,7 @@ class HttpRangeFetcher {
     const match = oldContentRange.match(/\d+-\d+\/(\d+)/)
     if (match) {
       newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
+      // eslint-disable-next-line prefer-destructuring
       newHeaders['x-resource-length'] = match[1]
     }
     return newHeaders
