@@ -1,9 +1,9 @@
-const LRU = require('quick-lru')
+import LRU from 'quick-lru'
 
-const { CacheSemantics } = require('./cacheSemantics')
-const AggregatingFetcher = require('./aggregatingFetcher')
+import { CacheSemantics } from './cacheSemantics'
+import AggregatingFetcher from './aggregatingFetcher'
 
-const crossFetchBinaryRange = require('./crossFetchBinaryRange')
+import crossFetchBinaryRange from './crossFetchBinaryRange'
 
 /**
  * check if the given exception was caused by an operation being intentionally aborted
@@ -32,7 +32,7 @@ function isAbortException(exception) {
  * smart cache that fetches chunks of remote files.
  * caches chunks in an LRU cache, and aggregates upstream fetches
  */
-class HttpRangeFetcher {
+export default class HttpRangeFetcher {
   /**
    * @param {object} args the arguments object
    * @param {number} [args.fetch] callback with signature `(key, start, end) => Promise({ headers, buffer })`
@@ -78,10 +78,11 @@ class HttpRangeFetcher {
     let length = requestedLength
     if (length === undefined) {
       const stat = await this.stat(key)
-      if (stat.size === undefined)
+      if (stat.size === undefined) {
         throw new Error(
           `length not specified, and could not determine size of the remote file`,
         )
+      }
       length = stat.size - position
     }
 
@@ -158,7 +159,9 @@ class HttpRangeFetcher {
       const chunk = await this._getChunk(key, 0)
       this._recordStatsIfNecessary(key, chunk)
       stat = this.stats.get(key)
-      if (!stat) throw new Error(`failed to retrieve file size for ${key}`)
+      if (!stat) {
+        throw new Error(`failed to retrieve file size for ${key}`)
+      }
     }
     return stat
   }
@@ -170,12 +173,16 @@ class HttpRangeFetcher {
       const match = headers['content-range'].match(/\d+-\d+\/(\d+)/)
       if (match) {
         stat.size = parseInt(match[1], 10)
-        if (Number.isNaN(stat.size)) delete stat.size
+        if (Number.isNaN(stat.size)) {
+          delete stat.size
+        }
       }
     }
     if (headers['last-modified']) {
       stat.mtime = new Date(headers['last-modified'])
-      if (stat.mtime.toString() === 'Invalid Date') delete stat.mtime
+      if (stat.mtime.toString() === 'Invalid Date') {
+        delete stat.mtime
+      }
       if (stat.mtime) {
         stat.mtimeMs = stat.mtime.getTime()
       }
@@ -234,7 +241,9 @@ class HttpRangeFetcher {
       if (fetchStart >= stat.size) {
         return undefined
       }
-      if (fetchEnd >= stat.size) fetchEnd = stat.size
+      if (fetchEnd >= stat.size) {
+        fetchEnd = stat.size
+      }
     }
 
     let alreadyRejected = false
@@ -248,7 +257,9 @@ class HttpRangeFetcher {
         throw err
       })
 
-    if (!alreadyRejected) this.chunkCache.set(chunkKey, freshPromise)
+    if (!alreadyRejected) {
+      this.chunkCache.set(chunkKey, freshPromise)
+    }
 
     const freshChunk = await freshPromise
 
@@ -268,7 +279,9 @@ class HttpRangeFetcher {
 
   // if the stats for a resource haven't been recorded yet, record them
   _recordStatsIfNecessary(key, chunk) {
-    if (!this.stats.has(key)) this.stats.set(key, this._headersToStats(chunk))
+    if (!this.stats.has(key)) {
+      this.stats.set(key, this._headersToStats(chunk))
+    }
   }
 
   // delete a promise from the cache if it is still in there.
@@ -288,5 +301,3 @@ class HttpRangeFetcher {
     this.chunkCache.clear()
   }
 }
-
-module.exports = HttpRangeFetcher

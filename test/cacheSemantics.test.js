@@ -1,4 +1,4 @@
-const { parseCacheControl, CacheSemantics } = require('../src/cacheSemantics')
+import { parseCacheControl, CacheSemantics } from '../src/cacheSemantics'
 
 describe('cache control parsing', () => {
   ;[

@@ -1,12 +1,18 @@
-const _ = require('lodash')
-
-const { HttpRangeFetcher } = require('../src/index')
+import { HttpRangeFetcher } from '../src/index'
 
 function toArrayBuffer(buffer) {
   return buffer.buffer.slice(
     buffer.byteOffset,
     buffer.byteOffset + buffer.byteLength,
   )
+}
+
+function range(start, end) {
+  const arr = []
+  for (let i = start; i < end; i++) {
+    arr.push(i)
+  }
+  return arr
 }
 
 jest.setTimeout(500)
@@ -32,7 +38,7 @@ it('can fetch a bunch of things in a single aggregated call', async () => {
       headers: { 'content-range': `${start}-${end}/256` },
       responseDate: new Date(),
       buffer: Buffer.from(
-        _.range(0, 256)
+        range(0, 256)
           .slice(start, end + 1)
           .map(n => add + n),
       ),
@@ -74,19 +80,14 @@ it('can fetch a bunch of things in a single aggregated call', async () => {
   expect(Array.from(byteArray)).toEqual([0, 1, 2])
 
   expect([...new Uint8Array(got3.buffer)]).toEqual([
-    200,
-    201,
-    202,
-    203,
-    204,
-    205,
-    206,
-    207,
-    208,
-    209,
+    200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
   ])
   expect(await cache.stat('foo')).toEqual({ size: 256 })
-  expect(calls).toEqual([['foo', 0, 89], ['bar', 0, 9], ['foo', 200, 209]])
+  expect(calls).toEqual([
+    ['foo', 0, 89],
+    ['bar', 0, 9],
+    ['foo', 200, 209],
+  ])
   expect(await cache.stat('donk')).toEqual({ size: 256 })
   expect(calls).toEqual([
     ['foo', 0, 89],
@@ -103,21 +104,24 @@ it('can fetch a whole file', async () => {
     return {
       headers: { 'content-range': `${start}-${end}/20` },
       responseDate: new Date(),
-      buffer: Buffer.from(_.range(0, 20).slice(start, end + 1)),
+      buffer: Buffer.from(range(0, 20).slice(start, end + 1)),
     }
   }
   const cache = new HttpRangeFetcher({ fetch, chunkSize: 10 })
   const got2 = await cache.getRange('foo')
-  expect([...new Uint8Array(got2.buffer)]).toEqual(_.range(0, 20))
-  expect(calls).toEqual([['foo', 0, 9], ['foo', 10, 19]])
+  expect([...new Uint8Array(got2.buffer)]).toEqual(range(0, 20))
+  expect(calls).toEqual([
+    ['foo', 0, 9],
+    ['foo', 10, 19],
+  ])
 
   cache.reset()
   calls.length = 0
 
   const got = await cache.getRange('foo', 0, 20)
-  expect([...new Uint8Array(got.buffer)]).toEqual(_.range(0, 20))
+  expect([...new Uint8Array(got.buffer)]).toEqual(range(0, 20))
   const got3 = await cache.getRange('foo')
-  expect([...new Uint8Array(got3.buffer)]).toEqual(_.range(0, 20))
+  expect([...new Uint8Array(got3.buffer)]).toEqual(range(0, 20))
   expect(calls).toEqual([['foo', 0, 19]])
 })
 
@@ -128,20 +132,23 @@ it('can fetch a whole file with no content-range', async () => {
     return {
       headers: { 'content-range': `${start}-${end}/20` },
       responseDate: new Date(),
-      buffer: Buffer.from(_.range(0, 20).slice(start, end + 1)),
+      buffer: Buffer.from(range(0, 20).slice(start, end + 1)),
     }
   }
   const cache = new HttpRangeFetcher({ fetch: f, chunkSize: 10 })
   const got2 = await cache.getRange('foo')
-  expect([...new Uint8Array(got2.buffer)]).toEqual(_.range(0, 20))
-  expect(calls).toEqual([['foo', 0, 9], ['foo', 10, 19]])
+  expect([...new Uint8Array(got2.buffer)]).toEqual(range(0, 20))
+  expect(calls).toEqual([
+    ['foo', 0, 9],
+    ['foo', 10, 19],
+  ])
 
   cache.reset()
   calls.length = 0
 
   const got = await cache.getRange('foo', 0, 20)
-  expect([...new Uint8Array(got.buffer)]).toEqual(_.range(0, 20))
+  expect([...new Uint8Array(got.buffer)]).toEqual(range(0, 20))
   const got3 = await cache.getRange('foo')
-  expect([...new Uint8Array(got3.buffer)]).toEqual(_.range(0, 20))
+  expect([...new Uint8Array(got3.buffer)]).toEqual(range(0, 20))
   expect(calls).toEqual([['foo', 0, 19]])
 })

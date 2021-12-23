@@ -1,6 +1,6 @@
-const crossFetch = require('cross-fetch')
+import crossFetch from 'cross-fetch'
 
-function crossFetchBinaryRange(url, start, end, options = {}) {
+export default function crossFetchBinaryRange(url, start, end, options = {}) {
   const requestDate = new Date()
   const fetchOptions = Object.assign(
     {
@@ -11,10 +11,11 @@ function crossFetchBinaryRange(url, start, end, options = {}) {
   )
   return crossFetch(url, fetchOptions).then(res => {
     const responseDate = new Date()
-    if (res.status !== 206 && res.status !== 200)
+    if (res.status !== 206 && res.status !== 200) {
       throw new Error(
         `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
       )
+    }
 
     if (res.status === 200) {
       // TODO: check that the response satisfies the byte range,
@@ -37,5 +38,3 @@ function crossFetchBinaryRange(url, start, end, options = {}) {
     }))
   })
 }
-
-module.exports = crossFetchBinaryRange
