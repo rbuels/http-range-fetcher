@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { parseCacheControl, CacheSemantics } from '../src/cacheSemantics'
 
 describe('cache control parsing', () => {

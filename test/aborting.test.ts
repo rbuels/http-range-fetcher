@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { AbortController } from 'abortcontroller-polyfill/dist/cjs-ponyfill'
 import { HttpRangeFetcher } from '../src/index'
 

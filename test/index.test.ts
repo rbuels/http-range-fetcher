@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { HttpRangeFetcher } from '../src/index'
 
 function toArrayBuffer(buffer) {

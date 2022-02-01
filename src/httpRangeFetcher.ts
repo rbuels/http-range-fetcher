@@ -1,3 +1,4 @@
+//@ts-nocheck
 import LRU from 'quick-lru'
 
 import { CacheSemantics } from './cacheSemantics'
