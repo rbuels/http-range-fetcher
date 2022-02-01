@@ -1,8 +1,5 @@
-const {
-  AbortController,
-} = require('abortcontroller-polyfill/dist/cjs-ponyfill')
-
-const { HttpRangeFetcher } = require('../src/index')
+import { AbortController } from 'abortcontroller-polyfill/dist/cjs-ponyfill'
+import { HttpRangeFetcher } from '../src/index'
 
 const timeout = ms => new Promise(res => setTimeout(res, ms))
 

@@ -1,5 +1,3 @@
-const HttpRangeFetcher = require('./httpRangeFetcher')
+import HttpRangeFetcher from './httpRangeFetcher'
 
-module.exports = {
-  HttpRangeFetcher,
-}
+export { HttpRangeFetcher }

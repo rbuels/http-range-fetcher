@@ -5,6 +5,7 @@
   "license": "MIT",
   "repository": "rbuels/http-range-fetcher",
   "main": "dist/index.js",
+  "module": "esm/index.js",
   "author": {
     "name": "Robert Buels",
     "email": "rbuels@gmail.com",
@@ -14,58 +15,46 @@
     "node": ">=6"
   },
   "files": [
-    "dist"
+    "dist",
+    "esm"
   ],
   "scripts": {
     "test": "jest",
     "coverage": "npm test -- --coverage",
-    "postcoverage": "opn coverage/lcov-report/index.html",
     "lint": "eslint src test",
     "docs": "documentation readme --shallow src/HttpRangeFetcher.js --section=API",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist esm",
+    "build:esm": "tsc --target es2018 --outDir esm",
+    "build:es5": "tsc --target es5 --outDir dist",
+    "build": "npm run build:esm && npm run build:es5",
     "prebuild": "npm run clean",
-    "build": "babel src -d dist",
-    "watch": "npm-watch",
     "prepublishOnly": "npm run lint && npm test && npm run build",
     "postpublish": "git push origin master --follow-tags",
     "version": "standard-changelog && git add CHANGELOG.md"
   },
-  "watch": {
-    "test": "{src,test}/*.js",
-    "lint": "{src,test}/*.js",
-    "build": "src"
-  },
-  "jest": {
-    "testEnvironment": "node"
-  },
   "keywords": [],
   "dependencies": {
-    "@babel/runtime": "^7.4.4",
     "abortcontroller-polyfill": "^1.2.9",
     "cross-fetch": "^2.2.2",
     "object.entries-ponyfill": "^1.0.1",
     "quick-lru": "^2.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.4",
-    "@babel/plugin-transform-runtime": "^7.4.4",
-    "@babel/preset-env": "^7.4.4",
-    "babel-eslint": "^8.2.6",
-    "babel-jest": "^24.8.0",
+    "@types/jest": "^27.0.3",
     "documentation": "^6.1.0",
-    "eslint": "^4.19.1",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-import": "^2.10.0",
-    "eslint-plugin-prettier": "^2.6.0",
-    "jest": "^24.8.0",
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
+    "eslint": "^7.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.4.5",
     "lodash": "^4.17.10",
-    "npm-watch": "^0.5.0",
-    "opn-cli": "^3.1.0",
-    "prettier": "^1.11.1",
+    "prettier": "^2.5.1",
     "rimraf": "^2.6.2",
-    "standard-changelog": "^1.0.0"
+    "standard-changelog": "^1.0.0",
+    "ts-jest": "^27.1.2",
+    "typescript": "^4.5.4"
   },
   "publishConfig": {
     "access": "public"

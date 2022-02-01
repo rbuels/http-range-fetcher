@@ -4,7 +4,7 @@ import { AbortController } from './abortcontroller-ponyfill'
 /**
  * takes fetch requests and aggregates them at a certain time frequency
  */
-class AggregatingFetcher {
+export default class AggregatingFetcher {
   /**
    *
    * @param {object} params
@@ -66,8 +66,9 @@ class AggregatingFetcher {
     const abortWholeRequest = new AbortController()
     const signals = []
     requests.forEach(({ requestOptions }) => {
-      if (requestOptions && requestOptions.signal)
+      if (requestOptions && requestOptions.signal) {
         signals.push(requestOptions.signal)
+      }
     })
     if (signals.length === requests.length) {
       this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
@@ -96,7 +97,9 @@ class AggregatingFetcher {
 
   _aggregateAndDispatch() {
     entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests || !requests.length) return
+      if (!requests || !requests.length) {
+        return
+      }
       // console.log(url, requests)
 
       // we are now going to aggregate the requests in this url's queue
@@ -122,7 +125,9 @@ class AggregatingFetcher {
 
       // eslint-disable-next-line no-param-reassign
       requests.length = 0
-      if (!requestsToDispatch.length) return
+      if (!requestsToDispatch.length) {
+        return
+      }
 
       let currentRequestGroup
       for (let i = 0; i < requestsToDispatch.length; i += 1) {
@@ -136,7 +141,9 @@ class AggregatingFetcher {
           currentRequestGroup.end = next.end
         } else {
           // out of range, dispatch the current request group
-          if (currentRequestGroup) this._dispatch(currentRequestGroup)
+          if (currentRequestGroup) {
+            this._dispatch(currentRequestGroup)
+          }
           // and start on a new one
           currentRequestGroup = {
             requests: [next],
@@ -146,12 +153,16 @@ class AggregatingFetcher {
           }
         }
       }
-      if (currentRequestGroup) this._dispatch(currentRequestGroup)
+      if (currentRequestGroup) {
+        this._dispatch(currentRequestGroup)
+      }
     })
   }
 
   _enQueue(url, request) {
-    if (!this.requestQueues[url]) this.requestQueues[url] = []
+    if (!this.requestQueues[url]) {
+      this.requestQueues[url] = []
+    }
     this.requestQueues[url].push(request)
   }
 
@@ -174,5 +185,3 @@ class AggregatingFetcher {
     })
   }
 }
-
-module.exports = AggregatingFetcher

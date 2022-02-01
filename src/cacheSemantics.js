@@ -1,4 +1,4 @@
-function parseCacheControl(field) {
+export function parseCacheControl(field) {
   if (typeof field !== 'string') {
     return {}
   }
@@ -14,7 +14,9 @@ function parseCacheControl(field) {
     },
   )
 
-  if (invalid) return {}
+  if (invalid) {
+    return {}
+  }
 
   // parse any things that seem to be numbers
   Object.keys(parsed).forEach(key => {
@@ -33,7 +35,7 @@ function parseCacheControl(field) {
   return parsed
 }
 
-class CacheSemantics {
+export class CacheSemantics {
   constructor({ minimumTTL }) {
     this.minimumTTL = minimumTTL
   }
@@ -42,22 +44,27 @@ class CacheSemantics {
     const { headers = {}, requestDate, responseDate } = chunkResponse
     let baselineDate = responseDate || requestDate
     if (!baselineDate) {
-      if (!headers.date) return undefined
+      if (!headers.date) {
+        return undefined
+      }
       baselineDate = new Date(headers.date)
     }
 
     const basePlus = ttl => new Date(baselineDate.getTime() + ttl)
 
     // results that are not really cacheable expire after the minimum time to live
-    if (/\bno-cache\b/.test(headers.pragma)) return basePlus(this.minimumTTL)
+    if (/\bno-cache\b/.test(headers.pragma)) {
+      return basePlus(this.minimumTTL)
+    }
 
     const cacheControl = parseCacheControl(headers['cache-control'])
     if (
       cacheControl['no-cache'] ||
       cacheControl['no-store'] ||
       cacheControl['must-revalidate']
-    )
+    ) {
       return basePlus(this.minimumTTL)
+    }
 
     if (cacheControl['max-age'] !== undefined) {
       const ttl = cacheControl['max-age'] * 1000 // max-age is in seconds
@@ -76,9 +83,12 @@ class CacheSemantics {
 
   _coerceToDate(thing) {
     if (thing) {
-      if (thing instanceof Date) return thing
-      if (typeof thing === 'string' || typeof thing === 'number')
+      if (thing instanceof Date) {
+        return thing
+      }
+      if (typeof thing === 'string' || typeof thing === 'number') {
         return new Date(thing)
+      }
     }
     return undefined
   }
@@ -104,4 +114,3 @@ class CacheSemantics {
     return true
   }
 }
-module.exports = { CacheSemantics, parseCacheControl }
