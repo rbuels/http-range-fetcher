@@ -49,7 +49,6 @@
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.4.5",
-    "lodash": "^4.17.10",
     "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
     "standard-changelog": "^2.0.27",
