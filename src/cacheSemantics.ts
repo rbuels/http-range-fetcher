@@ -1,3 +1,4 @@
+//@ts-nocheck
 export function parseCacheControl(field) {
   if (typeof field !== 'string') {
     return {}

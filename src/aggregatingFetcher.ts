@@ -1,3 +1,4 @@
+//@ts-nocheck
 import entries from 'object.entries-ponyfill'
 import { AbortController } from './abortcontroller-ponyfill'
 
@@ -15,6 +16,10 @@ export default class AggregatingFetcher {
     fetch,
     maxExtraSize = 32000,
     maxFetchSize = 1000000,
+  }: {
+    frequency: number
+    maxExtraSize: number
+    maxFetchSize: number
   }) {
     this.requestQueues = {} // url => array of requests
     this.fetchCallback = fetch

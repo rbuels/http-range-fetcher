@@ -11,7 +11,12 @@ Array [
     0,
     32767,
     Object {
-      "signal": AbortSignal {},
+      "signal": AbortSignal {
+        Symbol(kEvents): Map {},
+        Symbol(events.maxEventTargetListeners): 10,
+        Symbol(events.maxEventTargetListenersWarned): false,
+        Symbol(kAborted): true,
+      },
     },
   ],
 ]

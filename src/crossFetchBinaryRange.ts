@@ -1,3 +1,4 @@
+//@ts-nocheck
 import crossFetch from 'cross-fetch'
 
 export default function crossFetchBinaryRange(url, start, end, options = {}) {
