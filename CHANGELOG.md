@@ -1,16 +1,20 @@
+<a name="1.3.0"></a>
+
 # [1.3.0](https://github.com/rbuels/http-range-fetcher/compare/v1.2.5...v1.3.0) (2022-02-15)
 
-
+- Add ESM build of http-range-fetcher using typescript based build system (#29)
 
 <a name="1.2.5"></a>
+
 ## [1.2.5](https://github.com/rbuels/http-range-fetcher/compare/v1.2.4...v1.2.5) (2021-06-03)
 
-
+- Make standard-changelog a devDependency instead of a dependency
 
 <a name="1.2.4"></a>
+
 ## [1.2.4](https://github.com/rbuels/http-range-fetcher/compare/v1.2.3...v1.2.4) (2020-02-28)
 
-
+- Fix issue where stats cache can result in undefined due to LRU evacuation (#12, #13)
 
 ## [1.2.2](https://github.com/rbuels/http-range-fetcher/compare/v1.2.1...v1.2.2) (2019-05-09)
 
@@ -26,7 +30,6 @@
 
 - Fix promise leak and aborting rejection
 
-
 ## [1.1.2](https://github.com/rbuels/http-range-fetcher/compare/v1.1.1...v1.1.2) (2018-11-24)
 
 - Fix cache deleting for quick-lru
@@ -39,10 +42,6 @@
 
 - Expose maxExtraFetch and maxExtraSize params
 
-
 ## 1.0.0 (2018-08-07)
 
-
 - Initial release
-
-
