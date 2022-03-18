@@ -1,7 +1,19 @@
 //@ts-nocheck
-import crossFetch from 'cross-fetch'
+import global from 'window-or-global'
 
-export default function crossFetchBinaryRange(url, start, end, options = {}) {
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args))
+
+export default async function crossFetchBinaryRange(
+  url,
+  start,
+  end,
+  options = {},
+) {
+  if (!global.fetch) {
+    console.log('here')
+    global.fetch = fetch
+  }
   const requestDate = new Date()
   const fetchOptions = Object.assign(
     {
@@ -10,32 +22,32 @@ export default function crossFetchBinaryRange(url, start, end, options = {}) {
     },
     options,
   )
-  return crossFetch(url, fetchOptions).then(res => {
-    const responseDate = new Date()
-    if (res.status !== 206 && res.status !== 200) {
-      throw new Error(
-        `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
-      )
-    }
+  const res = await fetch(url, fetchOptions)
+  const responseDate = new Date()
+  if (res.status !== 206 && res.status !== 200) {
+    throw new Error(
+      `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
+    )
+  }
 
-    if (res.status === 200) {
-      // TODO: check that the response satisfies the byte range,
-      // and is not too big (check maximum size),
-      // because we actually ended up getting served the whole file
-      throw new Error(
-        `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
-      )
-    }
+  if (res.status === 200) {
+    // TODO: check that the response satisfies the byte range,
+    // and is not too big (check maximum size),
+    // because we actually ended up getting served the whole file
+    throw new Error(
+      `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
+    )
+  }
 
-    const bufPromise = res.buffer
-      ? res.buffer()
-      : res.arrayBuffer().then(arrayBuffer => Buffer.from(arrayBuffer))
-    // return the response headers, and the data buffer
-    return bufPromise.then(buffer => ({
-      headers: res.headers.map,
-      requestDate,
-      responseDate,
-      buffer,
-    }))
-  })
+  const buffer = await res
+    .arrayBuffer()
+    .then(arrayBuffer => Buffer.from(arrayBuffer))
+
+  // return the response headers, and the data buffer
+  return {
+    headers: res.headers.map,
+    requestDate,
+    responseDate,
+    buffer,
+  }
 }
