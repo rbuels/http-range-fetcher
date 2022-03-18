@@ -11,7 +11,6 @@ export default async function crossFetchBinaryRange(
   options = {},
 ) {
   if (!global.fetch) {
-    console.log('here')
     global.fetch = fetch
   }
   const requestDate = new Date()

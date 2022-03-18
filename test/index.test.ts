@@ -153,3 +153,4 @@ it('can fetch a whole file with no content-range', async () => {
   expect([...new Uint8Array(got3.buffer)]).toEqual(range(0, 20))
   expect(calls).toEqual([['foo', 0, 19]])
 })
+
