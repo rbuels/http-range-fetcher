@@ -1,6 +1,6 @@
 {
   "name": "http-range-fetcher",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "caching, aggregating fetch manager for doing lots of HTTP range requests",
   "license": "MIT",
   "repository": "rbuels/http-range-fetcher",
