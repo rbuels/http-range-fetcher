@@ -7,10 +7,10 @@ Cache/manager for HTTP byte-range requests that merges requests together and cac
 Designed for applications that request lots of small byte ranges over HTTP that are often adjacent
 to each other.
 
-Uses `cross-fetch` in the backend, so it works either in node or webpack/browserify. Respects
-HTTP caching semantics, with the exception of setting a default minimum TTL of 1 second on
-requests that are not really supposed to be cached (e.g. `Cache-Control: no-cache`). You can
-turn that behavior off by setting `minimumTTL` to 0 though.
+Works both in node or webpack/browserify. Respects HTTP caching semantics, with
+the exception of setting a default minimum TTL of 1 second on requests that are
+not really supposed to be cached (e.g. `Cache-Control: no-cache`). You can turn
+that behavior off by setting `minimumTTL` to 0 though.
 
 ## Install
 
