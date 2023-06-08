@@ -1,5 +1,4 @@
 //@ts-nocheck
-import entries from 'object.entries-ponyfill'
 import { AbortController } from './abortcontroller-ponyfill'
 
 /**
@@ -101,7 +100,7 @@ export default class AggregatingFetcher {
   }
 
   _aggregateAndDispatch() {
-    entries(this.requestQueues).forEach(([url, requests]) => {
+    Object.entries(this.requestQueues).forEach(([url, requests]) => {
       if (!requests || !requests.length) {
         return
       }
@@ -115,11 +114,7 @@ export default class AggregatingFetcher {
       // reject them now and forget about them
       requests.forEach(request => {
         const { requestOptions, reject } = request
-        if (
-          requestOptions &&
-          requestOptions.signal &&
-          requestOptions.signal.aborted
-        ) {
+        if (requestOptions?.signal?.aborted) {
           reject(Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' }))
         } else {
           requestsToDispatch.push(request)
