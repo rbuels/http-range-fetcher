@@ -36,9 +36,7 @@
   "keywords": [],
   "dependencies": {
     "abortcontroller-polyfill": "^1.2.9",
-    "node-fetch": "^2.6.7",
-    "quick-lru": "^4.0.0",
-    "window-or-global": "^1.0.1"
+    "quick-lru": "^4.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",

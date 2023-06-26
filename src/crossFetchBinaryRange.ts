@@ -1,8 +1,4 @@
 //@ts-nocheck
-import global from 'window-or-global'
-
-const fetch = (...args) =>
-  import('node-fetch').then(({ default: fetch }) => fetch(...args))
 
 export default async function crossFetchBinaryRange(
   url,
@@ -10,9 +6,6 @@ export default async function crossFetchBinaryRange(
   end,
   options = {},
 ) {
-  if (!global.fetch) {
-    global.fetch = fetch
-  }
   const requestDate = new Date()
   const fetchOptions = Object.assign(
     {
