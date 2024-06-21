@@ -54,7 +54,6 @@ export default class AggregatingFetcher {
         })
       })
     }).catch(e => {
-      // eslint-disable-next-line no-console
       console.error(e)
     })
   }
@@ -70,11 +69,13 @@ export default class AggregatingFetcher {
     const abortWholeRequest = new AbortController()
     const signals = []
     requests.forEach(({ requestOptions }) => {
-      if (requestOptions && requestOptions.signal) {
+      if (requestOptions?.signal) {
         signals.push(requestOptions.signal)
       }
     })
     if (signals.length === requests.length) {
+      // may need review
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
     }
 
@@ -101,7 +102,7 @@ export default class AggregatingFetcher {
 
   _aggregateAndDispatch() {
     Object.entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests || !requests.length) {
+      if (!requests?.length) {
         return
       }
       // console.log(url, requests)
@@ -123,15 +124,13 @@ export default class AggregatingFetcher {
 
       requestsToDispatch.sort((a, b) => a.start - b.start)
 
-      // eslint-disable-next-line no-param-reassign
       requests.length = 0
       if (!requestsToDispatch.length) {
         return
       }
 
       let currentRequestGroup
-      for (let i = 0; i < requestsToDispatch.length; i += 1) {
-        const next = requestsToDispatch[i]
+      for (const next of requestsToDispatch) {
         if (
           currentRequestGroup &&
           this._canAggregate(currentRequestGroup, next)

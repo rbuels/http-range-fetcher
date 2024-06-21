@@ -5,15 +5,16 @@ export function parseCacheControl(field) {
   }
 
   const parsed = {}
-  const invalid = field.toLowerCase().replace(
-    // eslint-disable-next-line no-control-regex,no-useless-escape
-    /(?:^|(?:\s*,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g,
-    (match, fieldName, three, four) => {
-      const value = three || four
-      parsed[fieldName] = value ? value.toLowerCase() : true
-      return ''
-    },
-  )
+  const invalid = field
+    .toLowerCase()
+    .replace(
+      /(?:^|(?:\s*,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g,
+      (match, fieldName, three, four) => {
+        const value = three || four
+        parsed[fieldName] = value ? value.toLowerCase() : true
+        return ''
+      },
+    )
 
   if (invalid) {
     return {}
