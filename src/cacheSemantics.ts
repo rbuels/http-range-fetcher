@@ -1,10 +1,26 @@
-//@ts-nocheck
-export function parseCacheControl(field) {
+import { Buffer } from 'buffer'
+interface MyHeaders {
+  expires: string
+  date?: Date
+  pragma: string
+  'content-range'?: string
+  'last-modified': string
+  'cache-control': string
+}
+
+export interface ChunkResponse {
+  buffer: Buffer
+  headers?: MyHeaders
+  requestDate: Date
+  responseDate: Date
+}
+
+export function parseCacheControl(field: string) {
   if (typeof field !== 'string') {
     return {}
   }
 
-  const parsed = {}
+  const parsed = {} as Record<string, string | number | boolean>
   const invalid = field
     .toLowerCase()
     .replace(
@@ -22,9 +38,9 @@ export function parseCacheControl(field) {
 
   // parse any things that seem to be numbers
   Object.keys(parsed).forEach(key => {
-    if (/^[\d]+$/.test(parsed[key])) {
+    if (/^[\d]+$/.test(`${parsed[key]}`)) {
       try {
-        const num = parseInt(parsed[key], 10)
+        const num = parseInt(`${parsed[key]}`, 10)
         if (!Number.isNaN(num)) {
           parsed[key] = num
         }
@@ -38,28 +54,34 @@ export function parseCacheControl(field) {
 }
 
 export class CacheSemantics {
-  constructor({ minimumTTL }) {
+  minimumTTL: number
+  constructor({ minimumTTL }: { minimumTTL: number }) {
     this.minimumTTL = minimumTTL
   }
 
-  calculateChunkExpirationDate(chunkResponse) {
-    const { headers = {}, requestDate, responseDate } = chunkResponse
+  calculateChunkExpirationDate(chunkResponse: ChunkResponse) {
+    const {
+      headers = {} as MyHeaders,
+      requestDate,
+      responseDate,
+    } = chunkResponse
+    const { date, pragma } = headers
     let baselineDate = responseDate || requestDate
     if (!baselineDate) {
-      if (!headers.date) {
+      if (!date) {
         return undefined
       }
-      baselineDate = new Date(headers.date)
+      baselineDate = new Date(date)
     }
 
-    const basePlus = ttl => new Date(baselineDate.getTime() + ttl)
+    const basePlus = (ttl: number) => new Date(baselineDate.getTime() + ttl)
 
     // results that are not really cacheable expire after the minimum time to live
-    if (/\bno-cache\b/.test(headers.pragma)) {
+    if (/\bno-cache\b/.test(pragma || '')) {
       return basePlus(this.minimumTTL)
     }
 
-    const cacheControl = parseCacheControl(headers['cache-control'])
+    const cacheControl = parseCacheControl(headers?.['cache-control'] || '')
     if (
       cacheControl['no-cache'] ||
       cacheControl['no-store'] ||
@@ -69,13 +91,13 @@ export class CacheSemantics {
     }
 
     if (cacheControl['max-age'] !== undefined) {
-      const ttl = cacheControl['max-age'] * 1000 // max-age is in seconds
+      const ttl = +cacheControl['max-age'] * 1000 // max-age is in seconds
       return basePlus(Math.max(ttl, this.minimumTTL))
     } else if (this._coerceToDate(headers.expires)) {
       return this._coerceToDate(headers.expires)
     } else if (this._coerceToDate(headers['last-modified'])) {
       const lastModified = this._coerceToDate(headers['last-modified'])
-      const ttl = (baselineDate.getTime() - lastModified.getTime()) / 10
+      const ttl = (baselineDate.getTime() - (lastModified?.getTime() || 0)) / 10
       return basePlus(ttl)
     }
 
@@ -83,7 +105,7 @@ export class CacheSemantics {
     return undefined
   }
 
-  _coerceToDate(thing) {
+  _coerceToDate(thing: Date | string | number) {
     if (thing) {
       if (thing instanceof Date) {
         return thing
@@ -97,20 +119,17 @@ export class CacheSemantics {
 
   /**
    * check whether a cached chunk response is still valid and can be used
-   * @param {object} chunkResponse
-   * @returns {boolean}
    */
-  cachedChunkIsValid(chunkResponse) {
+  cachedChunkIsValid(chunkResponse: ChunkResponse) {
     const expiration = this.calculateChunkExpirationDate(chunkResponse)
     return !expiration || new Date() <= expiration
   }
 
   /**
-   * check whether the response for this chunk fetch can be cached
-   * @param {object} chunkResponse
-   * @returns {boolean}
+   * check whether the response for this chunk fetch can be cached (always
+   * returns true now)
    */
-  chunkIsCacheable() {
+  chunkIsCacheable(_arg?: any) {
     // right now, we are caching everything, we just give it a very short
     // time to live if it's not supposed to be cached
     return true

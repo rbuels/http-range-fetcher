@@ -1,8 +1,7 @@
-//@ts-nocheck
 import { Buffer } from 'buffer'
 import LRU from 'quick-lru'
 
-import { CacheSemantics } from './cacheSemantics'
+import { CacheSemantics, ChunkResponse } from './cacheSemantics'
 import AggregatingFetcher from './aggregatingFetcher'
 
 import crossFetchBinaryRange from './crossFetchBinaryRange'
@@ -12,7 +11,7 @@ import crossFetchBinaryRange from './crossFetchBinaryRange'
  * @param {Error} exception
  * @returns {boolean}
  */
-function isAbortException(exception) {
+function isAbortException(exception: any) {
   return (
     // DOMException
     exception.name === 'AbortError' ||
@@ -35,17 +34,12 @@ function isAbortException(exception) {
  * caches chunks in an LRU cache, and aggregates upstream fetches
  */
 export default class HttpRangeFetcher {
-  /**
-   * @param {object} args the arguments object
-   * @param {number} [args.fetch] callback with signature `(key, start, end) => Promise({ headers, buffer })`
-   * @param {number} [args.size] size in bytes of cache to keep
-   * @param {number} [args.chunkSize] size in bytes of cached chunks
-   * @param {number} [args.aggregationTime] time in ms over which to pool requests before dispatching them
-   * @param {number} [args.minimumTTL] time in ms a non-cacheable response will be cached
-   * @param {number} [args.maxFetchSize] maximum size of an aggregated request
-   * @param {number} [args.maxExtraFetch] max number of additional bytes to fetch when aggregating requests
-   * that don't actually overlap
-   */
+  chunkSize: number
+  aggregator: AggregatingFetcher
+  chunkCache: LRU<string, Promise<ChunkResponse>>
+  cacheSemantics: CacheSemantics
+  stats: LRU<string, { size: number; mtime: Date }>
+
   constructor({
     fetch = crossFetchBinaryRange,
     size = 10000000,
@@ -54,6 +48,18 @@ export default class HttpRangeFetcher {
     minimumTTL = 1000,
     maxFetchSize = chunkSize * 4,
     maxExtraFetch = chunkSize,
+  }: {
+    fetch?: (
+      key: string,
+      start: number,
+      end: number,
+    ) => Promise<{ headers: Headers; buffer: Buffer }>
+    size?: number
+    chunkSize?: number
+    aggregationTime?: number
+    minimumTTL?: number
+    maxFetchSize?: number
+    maxExtraFetch?: number
   }) {
     this.aggregator = new AggregatingFetcher({
       fetch,
@@ -67,16 +73,12 @@ export default class HttpRangeFetcher {
     this.stats = new LRU({ maxSize: 20 })
   }
 
-  /**
-   * Fetch a range of a remote resource.
-   * @param {string} key the resource's unique identifier, this would usually be a URL.
-   * This is passed along to the fetch callback.
-   * @param {number} [position] offset in the file at which to start fetching
-   * @param {number} [length] number of bytes to fetch, defaults to the remainder of the file
-   * @param {object} [options] request options
-   * @param {AbortSignal} [options.signal] AbortSignal object that can be used to abort the fetch
-   */
-  async getRange(key, position = 0, requestedLength, options = {}) {
+  async getRange(
+    key: string,
+    position = 0,
+    requestedLength: number,
+    options = {},
+  ) {
     let length = requestedLength
     if (length === undefined) {
       const stat = await this.stat(key)
@@ -96,10 +98,10 @@ export default class HttpRangeFetcher {
     const fetches = new Array(lastChunk - firstChunk + 1)
     for (let chunk = firstChunk; chunk <= lastChunk; chunk += 1) {
       fetches[chunk - firstChunk] = this._getChunk(key, chunk, options).then(
-        response =>
-          response && {
-            headers: response.headers,
-            buffer: response.buffer,
+        res =>
+          res && {
+            headers: res.headers,
+            buffer: res.buffer,
             chunkNumber: chunk,
           },
       )
@@ -123,26 +125,31 @@ export default class HttpRangeFetcher {
     }
   }
 
-  _makeBuffer(chunkResponses, chunksOffset, length) {
+  _makeBuffer(
+    chunkResponses: { buffer: Buffer }[],
+    chunksOffset: number,
+    length: number,
+  ) {
     if (chunkResponses.length === 1) {
       return chunkResponses[0].buffer.slice(chunksOffset, chunksOffset + length)
     } else if (chunkResponses.length === 0) {
       return Buffer.allocUnsafe(0)
+    } else {
+      // 2 or more buffers
+      const buffers = chunkResponses.map(r => r.buffer)
+      const first = buffers.shift()!.slice(chunksOffset)
+      let last = buffers.pop()!
+      let trimEnd =
+        first.length +
+        buffers.reduce((sum, buf) => sum + buf.length, 0) +
+        last.length -
+        length
+      if (trimEnd < 0) {
+        trimEnd = 0
+      }
+      last = last.slice(0, last.length - trimEnd)
+      return Buffer.concat([first, ...buffers, last])
     }
-    // 2 or more buffers
-    const buffers = chunkResponses.map(r => r.buffer)
-    const first = buffers.shift().slice(chunksOffset)
-    let last = buffers.pop()
-    let trimEnd =
-      first.length +
-      buffers.reduce((sum, buf) => sum + buf.length, 0) +
-      last.length -
-      length
-    if (trimEnd < 0) {
-      trimEnd = 0
-    }
-    last = last.slice(0, last.length - trimEnd)
-    return Buffer.concat([first, ...buffers, last])
   }
 
   /**
@@ -155,11 +162,13 @@ export default class HttpRangeFetcher {
    * @param {string} key
    * @returns {Promise} for a stats object
    */
-  async stat(key) {
+  async stat(key: string) {
     let stat = this.stats.get(key)
     if (!stat) {
       const chunk = await this._getChunk(key, 0)
-      this._recordStatsIfNecessary(key, chunk)
+      if (chunk) {
+        this._recordStatsIfNecessary(key, chunk)
+      }
       stat = this.stats.get(key)
       if (!stat) {
         throw new Error(`failed to retrieve file size for ${key}`)
@@ -168,22 +177,23 @@ export default class HttpRangeFetcher {
     return stat
   }
 
-  _headersToStats(chunkResponse) {
+  _headersToStats(chunkResponse: ChunkResponse) {
     const { headers } = chunkResponse
-    const stat = {}
-    if (headers['content-range']) {
+    const stat = {} as { mtimeMs: number; mtime: Date; size: number }
+    if (headers?.['content-range']) {
       const match = headers['content-range'].match(/\d+-\d+\/(\d+)/)
       if (match) {
-        stat.size = parseInt(match[1], 10)
-        if (Number.isNaN(stat.size)) {
-          delete stat.size
+        const r = parseInt(match[1], 10)
+        if (!Number.isNaN(r)) {
+          stat.size = r
         }
       }
     }
-    if (headers['last-modified']) {
+    if (headers?.['last-modified']) {
       stat.mtime = new Date(headers['last-modified'])
       if (stat.mtime.toString() === 'Invalid Date') {
-        delete stat.mtime
+        console.warn('Invalid Date')
+        stat.mtime = new Date()
       }
       if (stat.mtime) {
         stat.mtimeMs = stat.mtime.getTime()
@@ -192,11 +202,14 @@ export default class HttpRangeFetcher {
     return stat
   }
 
-  _makeHeaders(originalHeaders, newStart, newEnd) {
-    const newHeaders = Object.assign({}, originalHeaders || {})
+  _makeHeaders(originalHeaders: Headers, newStart: number, newEnd: number) {
+    const newHeaders = Object.assign(
+      {} as Record<string, string | number>,
+      originalHeaders || {},
+    )
     newHeaders['content-length'] = newEnd - newStart
     const oldContentRange = newHeaders['content-range'] || ''
-    const match = oldContentRange.match(/\d+-\d+\/(\d+)/)
+    const match = `${oldContentRange}`.match(/\d+-\d+\/(\d+)/)
     if (match) {
       newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
 
@@ -205,13 +218,17 @@ export default class HttpRangeFetcher {
     return newHeaders
   }
 
-  async _getChunk(key, chunkNumber, requestOptions) {
+  async _getChunk(
+    key: string,
+    chunkNumber: number,
+    requestOptions?: { signal?: AbortSignal },
+  ): Promise<ChunkResponse | undefined> {
     const chunkKey = `${key}/${chunkNumber}`
     const cachedPromise = this.chunkCache.get(chunkKey)
 
     if (cachedPromise) {
-      let chunk
-      let chunkAborted
+      let chunk: ChunkResponse | undefined
+      let chunkAborted = false
       try {
         chunk = await cachedPromise
       } catch (err) {
@@ -224,13 +241,20 @@ export default class HttpRangeFetcher {
       }
       // when the cached chunk is resolved, validate it before returning it.
       // if invalid or aborted, delete it from the cache and redispatch the request
-      if (chunkAborted || !this.cacheSemantics.cachedChunkIsValid(chunk)) {
+      if (
+        // todo: audit whether the chunk && is needed
+        // was introduced during typescriptification
+        chunk &&
+        (chunkAborted || !this.cacheSemantics.cachedChunkIsValid(chunk))
+      ) {
         this._uncacheIfSame(chunkKey, cachedPromise)
         return this._getChunk(key, chunkNumber, requestOptions)
       }
 
       // gather the stats for the file from the headers
-      this._recordStatsIfNecessary(key, chunk)
+      if (chunk) {
+        this._recordStatsIfNecessary(key, chunk)
+      }
       return chunk
     }
 
@@ -249,15 +273,20 @@ export default class HttpRangeFetcher {
     }
 
     let alreadyRejected = false
-    const freshPromise = this.aggregator
-      .fetch(key, fetchStart, fetchEnd, requestOptions)
-      .catch(err => {
-        // if the request fails, remove its promise
-        // from the cache and keep the error
-        alreadyRejected = true
-        this._uncacheIfSame(chunkKey, freshPromise)
-        throw err
-      })
+    const freshPromise = (
+      this.aggregator.fetch(
+        key,
+        fetchStart,
+        fetchEnd,
+        requestOptions,
+      ) as Promise<ChunkResponse>
+    ).catch(err => {
+      // if the request fails, remove its promise
+      // from the cache and keep the error
+      alreadyRejected = true
+      this._uncacheIfSame(chunkKey, freshPromise)
+      throw err
+    })
 
     if (!alreadyRejected) {
       this.chunkCache.set(chunkKey, freshPromise)
@@ -280,7 +309,7 @@ export default class HttpRangeFetcher {
   }
 
   // if the stats for a resource haven't been recorded yet, record them
-  _recordStatsIfNecessary(key, chunk) {
+  _recordStatsIfNecessary(key: string, chunk: ChunkResponse) {
     if (!this.stats.has(key)) {
       this.stats.set(key, this._headersToStats(chunk))
     }
@@ -289,7 +318,7 @@ export default class HttpRangeFetcher {
   // delete a promise from the cache if it is still in there.
   // need to check if it is still the same because it might
   // have been overwritten sometime while the promise was in flight
-  _uncacheIfSame(key, cachedPromise) {
+  _uncacheIfSame(key: string, cachedPromise: Promise<ChunkResponse>) {
     if (this.chunkCache.get(key) === cachedPromise) {
       this.chunkCache.delete(key)
     }
