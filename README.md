@@ -1,7 +1,7 @@
 # @gmod/http-range-fetcher
 
 [![NPM version](https://img.shields.io/npm/v/@gmod/http-range-fetcher.svg?style=flat-square)](https://npmjs.org/package/@gmod/http-range-fetcher)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/GMOD/http-range-fetcher/push.yml?branch=master)](https://github.com/GMOD/http-range-fetcher/actions?query=branch%3Amaster+workflow%3APush+)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/rbuels/http-range-fetcher/push.yml?branch=master)](https://github.com/rbuels/http-range-fetcher/actions?query=branch%3Amaster+workflow%3APush+)
 
 Cache/manager for HTTP byte-range requests that merges requests together and
 caches results. Designed for applications that request lots of small byte ranges
