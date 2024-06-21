@@ -1,5 +1,4 @@
 //@ts-nocheck
-import { AbortController } from './abortcontroller-ponyfill'
 
 /**
  * takes fetch requests and aggregates them at a certain time frequency
