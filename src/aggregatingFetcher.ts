@@ -1,9 +1,33 @@
-//@ts-nocheck
+interface Req {
+  start: number
+  end: number
+  reject: (arg: unknown) => void
+  resolve: (arg: { headers: Headers; buffer: Buffer }) => void
+  requestOptions: { signal?: AbortSignal }
+}
+
+interface ReqGroup {
+  requests: Req[]
+  url: string
+  start: number
+  end: number
+}
 
 /**
  * takes fetch requests and aggregates them at a certain time frequency
  */
 export default class AggregatingFetcher {
+  timeout: unknown
+  requestQueues: Record<string, Req[]>
+  fetchCallback: (
+    url: string,
+    start: number,
+    end: number,
+    arg: { signal?: AbortSignal },
+  ) => Promise<{ headers: Headers; buffer: Buffer }>
+  frequency: number
+  maxExtraSize: number
+  maxFetchSize: number
   /**
    *
    * @param {object} params
@@ -15,6 +39,11 @@ export default class AggregatingFetcher {
     maxExtraSize = 32000,
     maxFetchSize = 1000000,
   }: {
+    fetch: (
+      url: string,
+      start: number,
+      end: number,
+    ) => Promise<{ headers: Headers; buffer: Buffer }>
     frequency: number
     maxExtraSize: number
     maxFetchSize: number
@@ -26,7 +55,7 @@ export default class AggregatingFetcher {
     this.maxFetchSize = maxFetchSize
   }
 
-  _canAggregate(requestGroup, request) {
+  _canAggregate(requestGroup: ReqGroup, request: Req) {
     return (
       // the fetches overlap, or come close
       request.start <= requestGroup.end + this.maxExtraSize &&
@@ -39,15 +68,13 @@ export default class AggregatingFetcher {
   // returns a promise that only resolves
   // when all of the signals in the given array
   // have fired their abort signal
-  _allSignalsFired(signals) {
-    return new Promise(resolve => {
+  _allSignalsFired(signals: AbortSignal[]) {
+    return new Promise<void>(resolve => {
       let signalsLeft = signals.filter(s => !s.aborted).length
       signals.forEach(signal => {
         signal.addEventListener('abort', () => {
           signalsLeft -= 1
-          // console.log('aggregatingfetcher received an abort')
           if (!signalsLeft) {
-            // console.log('aggregatingfetcher aborting aggegated request')
             resolve()
           }
         })
@@ -60,13 +87,13 @@ export default class AggregatingFetcher {
   // dispatch a request group as a single request
   // and then slice the result back up to satisfy
   // the individual requests
-  _dispatch({ url, start, end, requests }) {
+  _dispatch({ url, start, end, requests }: ReqGroup) {
     // if any of the requests have an AbortSignal `signal` in their requestOptions,
     // make our aggregating abortcontroller track it, aborting the request if
     // all of the abort signals that are aggregated here have fired
 
     const abortWholeRequest = new AbortController()
-    const signals = []
+    const signals = [] as AbortSignal[]
     requests.forEach(({ requestOptions }) => {
       if (requestOptions?.signal) {
         signals.push(requestOptions.signal)
@@ -108,7 +135,7 @@ export default class AggregatingFetcher {
 
       // we are now going to aggregate the requests in this url's queue
       // into groups of requests that can be dispatched as one
-      const requestsToDispatch = []
+      const requestsToDispatch = [] as Req[]
 
       // look to see if any of the requests are aborted, and if they are, just
       // reject them now and forget about them
@@ -128,7 +155,7 @@ export default class AggregatingFetcher {
         return
       }
 
-      let currentRequestGroup
+      let currentRequestGroup: ReqGroup | undefined
       for (const next of requestsToDispatch) {
         if (
           currentRequestGroup &&
@@ -157,7 +184,7 @@ export default class AggregatingFetcher {
     })
   }
 
-  _enQueue(url, request) {
+  _enQueue(url: string, request: Req) {
     if (!this.requestQueues[url]) {
       this.requestQueues[url] = []
     }
@@ -171,7 +198,7 @@ export default class AggregatingFetcher {
    * @param {number} end 0-based half-open
    * @param {object} [requestOptions] options passed to the underlying fetch call
    */
-  fetch(url, start, end, requestOptions = {}) {
+  fetch(url: string, start: number, end: number, requestOptions = {}) {
     return new Promise((resolve, reject) => {
       this._enQueue(url, { start, end, resolve, reject, requestOptions })
       if (!this.timeout) {

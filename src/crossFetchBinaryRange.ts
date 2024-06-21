@@ -1,10 +1,9 @@
-//@ts-nocheck
 import { Buffer } from 'buffer'
 
 export default async function crossFetchBinaryRange(
-  url,
-  start,
-  end,
+  url: string,
+  start: number,
+  end: number,
   options = {},
 ) {
   const requestDate = new Date()
@@ -38,6 +37,7 @@ export default async function crossFetchBinaryRange(
 
   // return the response headers, and the data buffer
   return {
+    // @ts-expect-error needs audit
     headers: res.headers.map,
     requestDate,
     responseDate,
