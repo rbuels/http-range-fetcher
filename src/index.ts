@@ -1,4 +1,3 @@
 //@ts-nocheck
-import HttpRangeFetcher from './httpRangeFetcher'
 
-export { HttpRangeFetcher }
+export { default as HttpRangeFetcher } from './httpRangeFetcher'

@@ -199,7 +199,7 @@ export default class HttpRangeFetcher {
     const match = oldContentRange.match(/\d+-\d+\/(\d+)/)
     if (match) {
       newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
-      // eslint-disable-next-line prefer-destructuring
+
       newHeaders['x-resource-length'] = match[1]
     }
     return newHeaders
@@ -239,7 +239,7 @@ export default class HttpRangeFetcher {
 
     // clamp the end of the fetch to the size if we have a cached size for the file
     const stat = this.stats.get(key)
-    if (stat && stat.size) {
+    if (stat?.size) {
       if (fetchStart >= stat.size) {
         return undefined
       }
