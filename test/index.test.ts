@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { it, expect } from 'vitest'
 import { HttpRangeFetcher } from '../src/index'
 
 function toArrayBuffer(buffer) {
@@ -16,7 +17,6 @@ function range(start, end) {
   return arr
 }
 
-jest.setTimeout(500)
 it(`can fetch a single chunk`, async () => {
   const fetch = async () => ({
     headers: {},

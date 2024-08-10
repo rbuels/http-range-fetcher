@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { describe, it, expect } from 'vitest'
 import { parseCacheControl, CacheSemantics } from '../src/cacheSemantics'
 
 describe('cache control parsing', () => {

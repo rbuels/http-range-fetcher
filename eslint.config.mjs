@@ -44,6 +44,7 @@ export default [
         {
           argsIgnorePattern: '^_',
           ignoreRestSiblings: true,
+          caughtErrors: 'none',
         },
       ],
 

@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { it, expect } from 'vitest'
 import { HttpRangeFetcher } from '../src/index'
 
 const timeout = ms => new Promise(res => setTimeout(res, ms))
