@@ -181,7 +181,7 @@ export default class HttpRangeFetcher {
     const { headers } = chunkResponse
     const stat = {} as { mtimeMs: number; mtime: Date; size: number }
     if (headers?.['content-range']) {
-      const match = headers['content-range'].match(/\d+-\d+\/(\d+)/)
+      const match = /\d+-\d+\/(\d+)/.exec(headers['content-range'])
       if (match) {
         const r = parseInt(match[1], 10)
         if (!Number.isNaN(r)) {
@@ -209,7 +209,7 @@ export default class HttpRangeFetcher {
     )
     newHeaders['content-length'] = newEnd - newStart
     const oldContentRange = newHeaders['content-range'] || ''
-    const match = `${oldContentRange}`.match(/\d+-\d+\/(\d+)/)
+    const match = /\d+-\d+\/(\d+)/.exec(`${oldContentRange}`)
     if (match) {
       newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
 
