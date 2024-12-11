@@ -79,7 +79,7 @@ export default class AggregatingFetcher {
           }
         })
       })
-    }).catch(e => {
+    }).catch((e: unknown) => {
       console.error(e)
     })
   }
@@ -95,20 +95,22 @@ export default class AggregatingFetcher {
     const abortWholeRequest = new AbortController()
     const signals = [] as AbortSignal[]
     requests.forEach(({ requestOptions }) => {
-      if (requestOptions?.signal) {
+      if (requestOptions.signal) {
         signals.push(requestOptions.signal)
       }
     })
     if (signals.length === requests.length) {
       // may need review
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
+      this._allSignalsFired(signals).then(() => {
+        abortWholeRequest.abort()
+      })
     }
 
     this.fetchCallback(url, start, end - 1, {
       signal: abortWholeRequest.signal,
-    }).then(
-      response => {
+    })
+      .then(response => {
         const data = response.buffer
 
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
@@ -117,16 +119,17 @@ export default class AggregatingFetcher {
             buffer: data.subarray(reqStart - start, reqEnd - start),
           })
         })
-      },
-      err => {
-        requests.forEach(({ reject }) => reject(err))
-      },
-    )
+      })
+      .catch((err: unknown) => {
+        requests.forEach(({ reject }) => {
+          reject(err)
+        })
+      })
   }
 
   _aggregateAndDispatch() {
     Object.entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests?.length) {
+      if (!requests.length) {
         return
       }
 
@@ -138,7 +141,7 @@ export default class AggregatingFetcher {
       // reject them now and forget about them
       requests.forEach(request => {
         const { requestOptions, reject } = request
-        if (requestOptions?.signal?.aborted) {
+        if (requestOptions.signal?.aborted) {
           reject(Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' }))
         } else {
           requestsToDispatch.push(request)

@@ -73,23 +73,7 @@ export default class HttpRangeFetcher {
     this.stats = new LRU({ maxSize: 20 })
   }
 
-  async getRange(
-    key: string,
-    position = 0,
-    requestedLength: number,
-    options = {},
-  ) {
-    let length = requestedLength
-    if (length === undefined) {
-      const stat = await this.stat(key)
-      if (stat.size === undefined) {
-        throw new Error(
-          `length not specified, and could not determine size of the remote file`,
-        )
-      }
-      length = stat.size - position
-    }
-
+  async getRange(key: string, position: number, length: number, options = {}) {
     // calculate the list of chunks involved in this fetch
     const firstChunk = Math.floor(position / this.chunkSize)
     const lastChunk = Math.floor((position + length - 1) / this.chunkSize)
@@ -117,7 +101,7 @@ export default class HttpRangeFetcher {
       }
     }
     const chunksOffset =
-      position - chunkResponses[0].chunkNumber * this.chunkSize
+      position - chunkResponses[0]!.chunkNumber * this.chunkSize
     return {
       headers: this._makeHeaders(
         chunkResponses[0].headers,
@@ -134,7 +118,10 @@ export default class HttpRangeFetcher {
     length: number,
   ) {
     if (chunkResponses.length === 1) {
-      return chunkResponses[0].buffer.slice(chunksOffset, chunksOffset + length)
+      return chunkResponses[0]!.buffer.slice(
+        chunksOffset,
+        chunksOffset + length,
+      )
     } else if (chunkResponses.length === 0) {
       return new Uint8Array(0)
     } else {
@@ -186,7 +173,7 @@ export default class HttpRangeFetcher {
     if (headers?.['content-range']) {
       const match = /\d+-\d+\/(\d+)/.exec(headers['content-range'])
       if (match) {
-        const r = parseInt(match[1], 10)
+        const r = parseInt(match[1]!, 10)
         if (!Number.isNaN(r)) {
           stat.size = r
         }
@@ -198,26 +185,22 @@ export default class HttpRangeFetcher {
         console.warn('Invalid Date')
         stat.mtime = new Date()
       }
-      if (stat.mtime) {
-        stat.mtimeMs = stat.mtime.getTime()
-      }
+      stat.mtimeMs = stat.mtime.getTime()
     }
     return stat
   }
 
   _makeHeaders(originalHeaders: Headers, newStart: number, newEnd: number) {
-    const newHeaders = Object.assign(
-      {} as Record<string, string | number>,
-      originalHeaders || {},
+    const headers = { ...originalHeaders } as Record<string, unknown>
+    const match = /\d+-\d+\/(\d+)/.exec(
+      (headers['content-range'] as string | undefined) || '',
     )
-    newHeaders['content-length'] = newEnd - newStart
-    const oldContentRange = newHeaders['content-range'] || ''
-    const match = /\d+-\d+\/(\d+)/.exec(`${oldContentRange}`)
-    if (match) {
-      newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
-      newHeaders['x-resource-length'] = match[1]
+    return {
+      ...originalHeaders,
+      'content-length': newEnd - newStart,
+      'content-range': `${newStart}-${newEnd - 1}/${match?.[1]}`,
+      'x-resource-length': match?.[1],
     }
-    return newHeaders
   }
 
   async _getChunk(
@@ -274,7 +257,6 @@ export default class HttpRangeFetcher {
       }
     }
 
-    let alreadyRejected = false
     const freshPromise = (
       this.aggregator.fetch(
         key,
@@ -282,27 +264,21 @@ export default class HttpRangeFetcher {
         fetchEnd,
         requestOptions,
       ) as Promise<ChunkResponse>
-    ).catch(err => {
-      // if the request fails, remove its promise
-      // from the cache and keep the error
-      alreadyRejected = true
+    ).catch((err: unknown) => {
       this._uncacheIfSame(chunkKey, freshPromise)
       throw err
     })
 
-    if (!alreadyRejected) {
-      this.chunkCache.set(chunkKey, freshPromise)
-    }
+    this.chunkCache.set(chunkKey, freshPromise)
 
     const freshChunk = await freshPromise
 
     // gather the stats for the file from the headers
     this._recordStatsIfNecessary(key, freshChunk)
 
-    // remove the promise from the cache
-    // if it turns out not to be cacheable. this is
-    // done after the fact because we want multiple requests
-    // for the same chunk to reuse the same cached promise
+    // remove the promise from the cache if it turns out not to be cacheable.
+    // this is done after the fact because we want multiple requests for the
+    // same chunk to reuse the same cached promise
     if (!this.cacheSemantics.chunkIsCacheable(freshChunk)) {
       this._uncacheIfSame(chunkKey, freshPromise)
     }

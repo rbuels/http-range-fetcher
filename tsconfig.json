@@ -9,6 +9,7 @@
     "sourceMap": true,
     "strict": true,
     "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true
   }
