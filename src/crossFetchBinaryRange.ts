@@ -1,5 +1,4 @@
 //@ts-nocheck
-import { Buffer } from 'buffer'
 
 export default async function crossFetchBinaryRange(
   url,
@@ -32,9 +31,7 @@ export default async function crossFetchBinaryRange(
     )
   }
 
-  const buffer = await res
-    .arrayBuffer()
-    .then(arrayBuffer => Buffer.from(arrayBuffer))
+  const buffer = await res.arrayBuffer()
 
   // return the response headers, and the data buffer
   return {
