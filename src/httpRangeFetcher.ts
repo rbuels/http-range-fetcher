@@ -1,10 +1,10 @@
-import { Buffer } from 'buffer'
 import LRU from 'quick-lru'
 
 import { CacheSemantics, ChunkResponse } from './cacheSemantics'
 import AggregatingFetcher from './aggregatingFetcher'
 
 import crossFetchBinaryRange from './crossFetchBinaryRange'
+import { concatUint8Array } from './util'
 
 /**
  * check if the given exception was caused by an operation being intentionally aborted
@@ -53,7 +53,7 @@ export default class HttpRangeFetcher {
       key: string,
       start: number,
       end: number,
-    ) => Promise<{ headers: Headers; buffer: Buffer }>
+    ) => Promise<{ headers: Headers; buffer: Uint8Array }>
     size?: number
     chunkSize?: number
     aggregationTime?: number
@@ -111,7 +111,10 @@ export default class HttpRangeFetcher {
     let chunkResponses = await Promise.all(fetches)
     chunkResponses = chunkResponses.filter(r => !!r) // filter out any undefined (out of range) responses
     if (!chunkResponses.length) {
-      return { headers: {}, buffer: Buffer.allocUnsafe(0) }
+      return {
+        headers: {},
+        buffer: new Uint8Array(0),
+      }
     }
     const chunksOffset =
       position - chunkResponses[0].chunkNumber * this.chunkSize
@@ -126,14 +129,14 @@ export default class HttpRangeFetcher {
   }
 
   _makeBuffer(
-    chunkResponses: { buffer: Buffer }[],
+    chunkResponses: { buffer: Uint8Array }[],
     chunksOffset: number,
     length: number,
   ) {
     if (chunkResponses.length === 1) {
       return chunkResponses[0].buffer.slice(chunksOffset, chunksOffset + length)
     } else if (chunkResponses.length === 0) {
-      return Buffer.allocUnsafe(0)
+      return new Uint8Array(0)
     } else {
       // 2 or more buffers
       const buffers = chunkResponses.map(r => r.buffer)
@@ -148,7 +151,7 @@ export default class HttpRangeFetcher {
         trimEnd = 0
       }
       last = last.slice(0, last.length - trimEnd)
-      return Buffer.concat([first, ...buffers, last])
+      return concatUint8Array([first, ...buffers, last])
     }
   }
 
@@ -212,7 +215,6 @@ export default class HttpRangeFetcher {
     const match = /\d+-\d+\/(\d+)/.exec(`${oldContentRange}`)
     if (match) {
       newHeaders['content-range'] = `${newStart}-${newEnd - 1}/${match[1]}`
-
       newHeaders['x-resource-length'] = match[1]
     }
     return newHeaders

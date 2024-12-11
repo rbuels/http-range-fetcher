@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer'
 interface MyHeaders {
   expires: string
   date?: Date
@@ -9,7 +8,7 @@ interface MyHeaders {
 }
 
 export interface ChunkResponse {
-  buffer: Buffer
+  buffer: Uint8Array
   headers?: MyHeaders
   requestDate: Date
   responseDate: Date
