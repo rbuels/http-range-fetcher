@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer'
 interface MyHeaders {
   expires: string
   date?: Date
@@ -9,7 +8,7 @@ interface MyHeaders {
 }
 
 export interface ChunkResponse {
-  buffer: Buffer
+  buffer: Uint8Array
   headers?: MyHeaders
   requestDate: Date
   responseDate: Date
@@ -21,16 +20,15 @@ export function parseCacheControl(field: string) {
   }
 
   const parsed = {} as Record<string, string | number | boolean>
-  const invalid = field
-    .toLowerCase()
-    .replace(
-      /(?:^|(?:\s*,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g,
-      (match, fieldName, three, four) => {
-        const value = three || four
-        parsed[fieldName] = value ? value.toLowerCase() : true
-        return ''
-      },
-    )
+  const invalid = field.toLowerCase().replace(
+    // eslint-disable-next-line no-control-regex
+    /(?:^|(?:\s*,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g,
+    (match, fieldName, three, four) => {
+      const value = three || four
+      parsed[fieldName] = value ? value.toLowerCase() : true
+      return ''
+    },
+  )
 
   if (invalid) {
     return {}
@@ -66,7 +64,9 @@ export class CacheSemantics {
       responseDate,
     } = chunkResponse
     const { date, pragma } = headers
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     let baselineDate = responseDate || requestDate
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!baselineDate) {
       if (!date) {
         return undefined
@@ -81,7 +81,7 @@ export class CacheSemantics {
       return basePlus(this.minimumTTL)
     }
 
-    const cacheControl = parseCacheControl(headers?.['cache-control'] || '')
+    const cacheControl = parseCacheControl(headers['cache-control'] || '')
     if (
       cacheControl['no-cache'] ||
       cacheControl['no-store'] ||

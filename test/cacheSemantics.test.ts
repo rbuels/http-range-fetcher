@@ -18,7 +18,7 @@ describe('cache control parsing', () => {
       { 'no-cache': true, 'max-stale': 20, 'must-revalidate': true },
     ],
   ].forEach(([input, output]) => {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     it(`parses "${input}"`, () => {
       expect(parseCacheControl(input)).toEqual(output)
     })

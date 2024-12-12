@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer'
-
 export default async function crossFetchBinaryRange(
   url: string,
   start: number,
@@ -31,9 +29,7 @@ export default async function crossFetchBinaryRange(
     )
   }
 
-  const buffer = await res
-    .arrayBuffer()
-    .then(arrayBuffer => Buffer.from(arrayBuffer))
+  const buffer = new Uint8Array(await res.arrayBuffer())
 
   // return the response headers, and the data buffer
   return {

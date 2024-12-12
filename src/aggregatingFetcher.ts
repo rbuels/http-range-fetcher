@@ -1,8 +1,13 @@
+interface Result {
+  headers: Headers
+  buffer: Uint8Array
+}
+
 interface Req {
   start: number
   end: number
   reject: (arg: unknown) => void
-  resolve: (arg: { headers: Headers; buffer: Buffer }) => void
+  resolve: (arg: Result) => void
   requestOptions: { signal?: AbortSignal }
 }
 
@@ -24,26 +29,22 @@ export default class AggregatingFetcher {
     start: number,
     end: number,
     arg: { signal?: AbortSignal },
-  ) => Promise<{ headers: Headers; buffer: Buffer }>
+  ) => Promise<Result>
   frequency: number
   maxExtraSize: number
   maxFetchSize: number
   /**
    *
-   * @param {object} params
-   * @param {number} [params.frequency] number of milliseconds to wait for requests to aggregate
+   * @param params
+   * @param [params.frequency] number of milliseconds to wait for requests to aggregate
    */
   constructor({
-    frequency = 100,
     fetch,
+    frequency = 100,
     maxExtraSize = 32000,
     maxFetchSize = 1000000,
   }: {
-    fetch: (
-      url: string,
-      start: number,
-      end: number,
-    ) => Promise<{ headers: Headers; buffer: Buffer }>
+    fetch: (url: string, start: number, end: number) => Promise<Result>
     frequency: number
     maxExtraSize: number
     maxFetchSize: number
@@ -65,9 +66,8 @@ export default class AggregatingFetcher {
     )
   }
 
-  // returns a promise that only resolves
-  // when all of the signals in the given array
-  // have fired their abort signal
+  // returns a promise that only resolves when all of the signals in the given
+  // array have fired their abort signal
   _allSignalsFired(signals: AbortSignal[]) {
     return new Promise<void>(resolve => {
       let signalsLeft = signals.filter(s => !s.aborted).length
@@ -79,69 +79,69 @@ export default class AggregatingFetcher {
           }
         })
       })
-    }).catch(e => {
+    }).catch((e: unknown) => {
       console.error(e)
     })
   }
 
-  // dispatch a request group as a single request
-  // and then slice the result back up to satisfy
-  // the individual requests
+  // dispatch a request group as a single request and then slice the result
+  // back up to satisfy the individual requests
   _dispatch({ url, start, end, requests }: ReqGroup) {
-    // if any of the requests have an AbortSignal `signal` in their requestOptions,
-    // make our aggregating abortcontroller track it, aborting the request if
-    // all of the abort signals that are aggregated here have fired
+    // if any of the requests have an AbortSignal `signal` in their
+    // requestOptions, make our aggregating abortcontroller track it, aborting
+    // the request if all of the abort signals that are aggregated here have
+    // fired
 
     const abortWholeRequest = new AbortController()
     const signals = [] as AbortSignal[]
     requests.forEach(({ requestOptions }) => {
-      if (requestOptions?.signal) {
+      if (requestOptions.signal) {
         signals.push(requestOptions.signal)
       }
     })
     if (signals.length === requests.length) {
       // may need review
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
+      this._allSignalsFired(signals).then(() => {
+        abortWholeRequest.abort()
+      })
     }
 
     this.fetchCallback(url, start, end - 1, {
       signal: abortWholeRequest.signal,
-    }).then(
-      response => {
+    })
+      .then(response => {
         const data = response.buffer
 
         requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
-          // remember Buffer.slice does not copy, it creates
-          // an offset child buffer pointing to the same data
           resolve({
             headers: response.headers,
-            buffer: data.slice(reqStart - start, reqEnd - start),
+            buffer: data.subarray(reqStart - start, reqEnd - start),
           })
         })
-      },
-      err => {
-        requests.forEach(({ reject }) => reject(err))
-      },
-    )
+      })
+      .catch((err: unknown) => {
+        requests.forEach(({ reject }) => {
+          reject(err)
+        })
+      })
   }
 
   _aggregateAndDispatch() {
     Object.entries(this.requestQueues).forEach(([url, requests]) => {
-      if (!requests?.length) {
+      if (!requests.length) {
         return
       }
-      // console.log(url, requests)
 
-      // we are now going to aggregate the requests in this url's queue
-      // into groups of requests that can be dispatched as one
+      // we are now going to aggregate the requests in this url's queue into
+      // groups of requests that can be dispatched as one
       const requestsToDispatch = [] as Req[]
 
       // look to see if any of the requests are aborted, and if they are, just
       // reject them now and forget about them
       requests.forEach(request => {
         const { requestOptions, reject } = request
-        if (requestOptions?.signal?.aborted) {
+        if (requestOptions.signal?.aborted) {
           reject(Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' }))
         } else {
           requestsToDispatch.push(request)
@@ -193,10 +193,10 @@ export default class AggregatingFetcher {
 
   /**
    *
-   * @param {string} url
-   * @param {number} start 0-based half-open
-   * @param {number} end 0-based half-open
-   * @param {object} [requestOptions] options passed to the underlying fetch call
+   * @param url
+   * @param start 0-based half-open
+   * @param end 0-based half-open
+   * @param [requestOptions] options passed to the underlying fetch call
    */
   fetch(url: string, start: number, end: number, requestOptions = {}) {
     return new Promise((resolve, reject) => {
