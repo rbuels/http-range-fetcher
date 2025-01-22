@@ -1,43 +1,30 @@
-import prettier from 'eslint-plugin-prettier'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
-import tsParser from '@typescript-eslint/parser'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import js from '@eslint/js'
-import { FlatCompat } from '@eslint/eslintrc'
+import eslint from '@eslint/js'
+import tseslint from 'typescript-eslint'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-})
-
-export default [
-  ...compat.extends(
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-type-checked',
-    'plugin:@typescript-eslint/stylistic-type-checked',
-    'plugin:prettier/recommended',
-    'plugin:unicorn/recommended',
-  ),
+export default tseslint.config(
   {
-    plugins: {
-      prettier,
-      '@typescript-eslint': typescriptEslint,
-    },
-
+    ignores: [
+      'webpack.config.js',
+      'dist/*',
+      'esm/*',
+      'example/*',
+      'eslint.config.mjs',
+    ],
+  },
+  {
     languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 5,
-      sourceType: 'script',
-
       parserOptions: {
-        project: './tsconfig.lint.json',
+        project: ['./tsconfig.lint.json'],
+        tsconfigRootDir: import.meta.dirname,
       },
     },
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.strictTypeChecked,
 
+  {
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -48,11 +35,15 @@ export default [
         },
       ],
 
-      'no-underscore-dangle': 0,
+      'no-underscore-dangle': 'off',
       curly: 'error',
-      '@typescript-eslint/no-explicit-any': 0,
-      '@typescript-eslint/explicit-module-boundary-types': 0,
-      '@typescript-eslint/ban-ts-comment': 0,
+
+      'no-control-regex': 'off',
+      'no-useless-escape': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-base-to-string': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
       semi: ['error', 'never'],
       'unicorn/no-new-array': 'off',
       'unicorn/no-empty-file': 'off',
@@ -60,7 +51,6 @@ export default [
       'unicorn/prefer-modern-math-apis': 'off',
       'unicorn/prefer-node-protocol': 'off',
       'unicorn/no-unreadable-array-destructuring': 'off',
-      'unicorn/prefer-string-replace-all': 'off',
       'unicorn/no-abusive-eslint-disable': 'off',
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/number-literal-case': 'off',
@@ -71,7 +61,6 @@ export default [
       'unicorn/no-lonely-if': 'off',
       'unicorn/consistent-destructuring': 'off',
       'unicorn/prefer-module': 'off',
-      'unicorn/no-hex-escape': 'off',
       'unicorn/prefer-optional-catch-binding': 'off',
       'unicorn/no-useless-undefined': 'off',
       'unicorn/no-null': 'off',
@@ -97,6 +86,7 @@ export default [
       'unicorn/prefer-number-properties': 'off',
       'unicorn/no-process-exit': 'off',
       'unicorn/prefer-at': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -104,6 +94,9 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      'no-empty': 'off',
     },
   },
-]
+)

@@ -39,20 +39,20 @@ export default class AggregatingFetcher {
   // returns a promise that only resolves
   // when all of the signals in the given array
   // have fired their abort signal
-  _allSignalsFired(signals) {
-    return new Promise(resolve => {
-      let signalsLeft = signals.filter(s => !s.aborted).length
-      signals.forEach(signal => {
-        // signal.addEventListener('abort', () => {
-        //   signalsLeft -= 1
-        //   // console.log('aggregatingfetcher received an abort')
-        //   if (!signalsLeft) {
-        //     // console.log('aggregatingfetcher aborting aggegated request')
-        //     resolve()
-        //   }
-        // })
-      })
-    }).catch(e => {
+  _allSignalsFired(_signals) {
+    return new Promise(() => {
+      // const signalsLeft = signals.filter(s => !s.aborted).length
+      // signals.forEach(signal => {
+      //   // signal.addEventListener('abort', () => {
+      //   //   signalsLeft -= 1
+      //   //   // console.log('aggregatingfetcher received an abort')
+      //   //   if (!signalsLeft) {
+      //   //     // console.log('aggregatingfetcher aborting aggegated request')
+      //   //     resolve()
+      //   //   }
+      //   // })
+      // })
+    }).catch((e: unknown) => {
       console.error(e)
     })
   }
@@ -75,7 +75,9 @@ export default class AggregatingFetcher {
     if (signals.length === requests.length) {
       // may need review
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this._allSignalsFired(signals).then(() => abortWholeRequest.abort())
+      this._allSignalsFired(signals).then(() => {
+        abortWholeRequest.abort()
+      })
     }
 
     this.fetchCallback(url, start, end - 1, {

@@ -259,6 +259,7 @@ export default class HttpRangeFetcher {
         throw err
       })
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!alreadyRejected) {
       this.chunkCache.set(chunkKey, freshPromise)
     }
