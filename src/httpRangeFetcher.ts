@@ -191,11 +191,13 @@ export default class HttpRangeFetcher {
   }
 
   _makeHeaders(originalHeaders: Headers, newStart: number, newEnd: number) {
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     const headers = { ...originalHeaders } as Record<string, unknown>
     const match = /\d+-\d+\/(\d+)/.exec(
       (headers['content-range'] as string | undefined) || '',
     )
     return {
+      // eslint-disable-next-line @typescript-eslint/no-misused-spread
       ...originalHeaders,
       'content-length': newEnd - newStart,
       'content-range': `${newStart}-${newEnd - 1}/${match?.[1]}`,
