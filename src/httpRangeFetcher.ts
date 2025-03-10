@@ -1,10 +1,10 @@
 import LRU from 'quick-lru'
 
-import { CacheSemantics, ChunkResponse } from './cacheSemantics'
-import AggregatingFetcher from './aggregatingFetcher'
+import { CacheSemantics, ChunkResponse } from './cacheSemantics.ts'
+import AggregatingFetcher from './aggregatingFetcher.ts'
 
-import crossFetchBinaryRange from './crossFetchBinaryRange'
-import { concatUint8Array } from './util'
+import crossFetchBinaryRange from './crossFetchBinaryRange.ts'
+import { concatUint8Array } from './util.ts'
 
 /**
  * check if the given exception was caused by an operation being intentionally aborted
