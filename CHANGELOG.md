@@ -1,5 +1,9 @@
 # [5.0.0](https://github.com/rbuels/http-range-fetcher/compare/v4.0.0...v5.0.0) (2025-04-30)
 
+
+
+# [5.0.0](https://github.com/rbuels/http-range-fetcher/compare/v4.0.0...v5.0.0) (2025-04-30)
+
 ## [4.0.1](https://github.com/rbuels/http-range-fetcher/compare/v4.0.0...v4.0.1) (2025-04-30)
 
 # [4.0.0](https://github.com/rbuels/http-range-fetcher/compare/v3.0.4...v4.0.0) (2024-12-12)
