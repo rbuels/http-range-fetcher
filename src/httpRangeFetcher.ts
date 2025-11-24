@@ -23,7 +23,7 @@ function isAbortException(exception: any) {
     // Error: aborted
     // AbortError: aborted
     // AbortError: The user aborted a request.
-    !!exception.message.match(/\b(aborted|AbortError)\b/i)
+    /\b(aborted|AbortError)\b/i.test(exception.message)
   )
 }
 
@@ -118,27 +118,28 @@ export default class HttpRangeFetcher {
     length: number,
   ) {
     if (chunkResponses.length === 1) {
-      return chunkResponses[0]!.buffer.slice(
+      return chunkResponses[0]!.buffer.subarray(
         chunksOffset,
         chunksOffset + length,
       )
     } else if (chunkResponses.length === 0) {
       return new Uint8Array(0)
     } else {
-      // 2 or more buffers
-      const buffers = chunkResponses.map(r => r.buffer)
-      const first = buffers.shift()!.slice(chunksOffset)
-      let last = buffers.pop()!
-      let trimEnd =
-        first.length +
-        buffers.reduce((sum, buf) => sum + buf.length, 0) +
-        last.length -
-        length
-      if (trimEnd < 0) {
-        trimEnd = 0
-      }
-      last = last.slice(0, last.length - trimEnd)
-      return concatUint8Array([first, ...buffers, last])
+      // 2 or more buffers - avoid array mutations by using indices
+      const firstBuffer = chunkResponses[0]!.buffer
+      const lastBuffer = chunkResponses[chunkResponses.length - 1]!.buffer
+      const middleBuffers = chunkResponses.slice(1, -1).map(r => r.buffer)
+
+      const firstSlice = firstBuffer.subarray(chunksOffset)
+      const middleLength = middleBuffers.reduce(
+        (sum, buf) => sum + buf.length,
+        0,
+      )
+      const availableLength = firstSlice.length + middleLength + lastBuffer.length
+      const trimEnd = Math.max(0, availableLength - length)
+      const lastSlice = lastBuffer.subarray(0, lastBuffer.length - trimEnd)
+
+      return concatUint8Array([firstSlice, ...middleBuffers, lastSlice])
     }
   }
 
@@ -181,7 +182,7 @@ export default class HttpRangeFetcher {
     }
     if (headers?.['last-modified']) {
       stat.mtime = new Date(headers['last-modified'])
-      if (stat.mtime.toString() === 'Invalid Date') {
+      if (Number.isNaN(stat.mtime.getTime())) {
         console.warn('Invalid Date')
         stat.mtime = new Date()
       }
@@ -190,14 +191,14 @@ export default class HttpRangeFetcher {
     return stat
   }
 
-  _makeHeaders(originalHeaders: Headers, newStart: number, newEnd: number) {
-    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-    const headers = { ...originalHeaders } as Record<string, unknown>
-    const match = /\d+-\d+\/(\d+)/.exec(
-      (headers['content-range'] as string | undefined) || '',
-    )
+  _makeHeaders(
+    originalHeaders: Record<string, unknown>,
+    newStart: number,
+    newEnd: number,
+  ) {
+    const contentRange = (originalHeaders['content-range'] as string) || ''
+    const match = /\d+-\d+\/(\d+)/.exec(contentRange)
     return {
-      // eslint-disable-next-line @typescript-eslint/no-misused-spread
       ...originalHeaders,
       'content-length': newEnd - newStart,
       'content-range': `${newStart}-${newEnd - 1}/${match?.[1]}`,

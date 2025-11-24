@@ -23,7 +23,7 @@ interface ReqGroup {
  */
 export default class AggregatingFetcher {
   timeout: unknown
-  requestQueues: Record<string, Req[]>
+  requestQueues = new Map<string, Req[]>()
   fetchCallback: (
     url: string,
     start: number,
@@ -49,7 +49,6 @@ export default class AggregatingFetcher {
     maxExtraSize: number
     maxFetchSize: number
   }) {
-    this.requestQueues = {} // url => array of requests
     this.fetchCallback = fetch
     this.frequency = frequency
     this.maxExtraSize = maxExtraSize
@@ -71,14 +70,18 @@ export default class AggregatingFetcher {
   _allSignalsFired(signals: AbortSignal[]) {
     return new Promise<void>(resolve => {
       let signalsLeft = signals.filter(s => !s.aborted).length
-      signals.forEach(signal => {
+      if (signalsLeft === 0) {
+        resolve()
+        return
+      }
+      for (const signal of signals) {
         signal.addEventListener('abort', () => {
           signalsLeft -= 1
           if (!signalsLeft) {
             resolve()
           }
         })
-      })
+      }
     }).catch((e: unknown) => {
       console.error(e)
     })
@@ -93,12 +96,12 @@ export default class AggregatingFetcher {
     // fired
 
     const abortWholeRequest = new AbortController()
-    const signals = [] as AbortSignal[]
-    requests.forEach(({ requestOptions }) => {
+    const signals: AbortSignal[] = []
+    for (const { requestOptions } of requests) {
       if (requestOptions.signal) {
         signals.push(requestOptions.signal)
       }
-    })
+    }
     if (signals.length === requests.length) {
       // may need review
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -112,25 +115,24 @@ export default class AggregatingFetcher {
     })
       .then(response => {
         const data = response.buffer
-
-        requests.forEach(({ start: reqStart, end: reqEnd, resolve }) => {
+        for (const { start: reqStart, end: reqEnd, resolve } of requests) {
           resolve({
             headers: response.headers,
             buffer: data.subarray(reqStart - start, reqEnd - start),
           })
-        })
+        }
       })
       .catch((err: unknown) => {
-        requests.forEach(({ reject }) => {
+        for (const { reject } of requests) {
           reject(err)
-        })
+        }
       })
   }
 
   _aggregateAndDispatch() {
-    Object.entries(this.requestQueues).forEach(([url, requests]) => {
+    for (const [url, requests] of this.requestQueues) {
       if (!requests.length) {
-        return
+        continue
       }
 
       // we are now going to aggregate the requests in this url's queue into
@@ -139,20 +141,20 @@ export default class AggregatingFetcher {
 
       // look to see if any of the requests are aborted, and if they are, just
       // reject them now and forget about them
-      requests.forEach(request => {
+      for (const request of requests) {
         const { requestOptions, reject } = request
         if (requestOptions.signal?.aborted) {
           reject(Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' }))
         } else {
           requestsToDispatch.push(request)
         }
-      })
+      }
 
       requestsToDispatch.sort((a, b) => a.start - b.start)
 
       requests.length = 0
       if (!requestsToDispatch.length) {
-        return
+        continue
       }
 
       let currentRequestGroup: ReqGroup | undefined
@@ -181,14 +183,16 @@ export default class AggregatingFetcher {
       if (currentRequestGroup) {
         this._dispatch(currentRequestGroup)
       }
-    })
+    }
   }
 
   _enQueue(url: string, request: Req) {
-    if (!this.requestQueues[url]) {
-      this.requestQueues[url] = []
+    let queue = this.requestQueues.get(url)
+    if (!queue) {
+      queue = []
+      this.requestQueues.set(url, queue)
     }
-    this.requestQueues[url].push(request)
+    queue.push(request)
   }
 
   /**

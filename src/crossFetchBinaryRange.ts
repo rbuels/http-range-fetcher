@@ -31,10 +31,13 @@ export default async function crossFetchBinaryRange(
 
   const buffer = new Uint8Array(await res.arrayBuffer())
 
-  // return the response headers, and the data buffer
+  const headers: Record<string, string> = {}
+  res.headers.forEach((value, key) => {
+    headers[key] = value
+  })
+
   return {
-    // @ts-expect-error needs audit
-    headers: res.headers.map,
+    headers,
     requestDate,
     responseDate,
     buffer,

@@ -35,18 +35,14 @@ export function parseCacheControl(field: string) {
   }
 
   // parse any things that seem to be numbers
-  Object.keys(parsed).forEach(key => {
-    if (/^[\d]+$/.test(`${parsed[key]}`)) {
-      try {
-        const num = parseInt(`${parsed[key]}`, 10)
-        if (!Number.isNaN(num)) {
-          parsed[key] = num
-        }
-      } catch (e) {
-        /* ignore */
+  for (const key of Object.keys(parsed)) {
+    if (/^\d+$/.test(`${parsed[key]}`)) {
+      const num = parseInt(`${parsed[key]}`, 10)
+      if (!Number.isNaN(num)) {
+        parsed[key] = num
       }
     }
-  })
+  }
 
   return parsed
 }
@@ -122,7 +118,7 @@ export class CacheSemantics {
    */
   cachedChunkIsValid(chunkResponse: ChunkResponse) {
     const expiration = this.calculateChunkExpirationDate(chunkResponse)
-    return !expiration || new Date() <= expiration
+    return !expiration || Date.now() <= expiration.getTime()
   }
 
   /**
