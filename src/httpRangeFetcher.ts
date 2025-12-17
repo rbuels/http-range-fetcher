@@ -1,4 +1,4 @@
-import LRU from 'quick-lru'
+import LRU from '@jbrowse/quick-lru'
 
 import { CacheSemantics, ChunkResponse } from './cacheSemantics.ts'
 import AggregatingFetcher from './aggregatingFetcher.ts'
