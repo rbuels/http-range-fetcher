@@ -45,9 +45,9 @@ export default class AggregatingFetcher {
     maxFetchSize = 1000000,
   }: {
     fetch: (url: string, start: number, end: number) => Promise<Result>
-    frequency: number
-    maxExtraSize: number
-    maxFetchSize: number
+    frequency?: number
+    maxExtraSize?: number
+    maxFetchSize?: number
   }) {
     this.requestQueues = {} // url => array of requests
     this.fetchCallback = fetch
