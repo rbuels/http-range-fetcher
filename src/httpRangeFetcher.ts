@@ -1,8 +1,7 @@
 import LRU from '@jbrowse/quick-lru'
 
-import { CacheSemantics, ChunkResponse } from './cacheSemantics.ts'
 import AggregatingFetcher from './aggregatingFetcher.ts'
-
+import { CacheSemantics, ChunkResponse } from './cacheSemantics.ts'
 import crossFetchBinaryRange from './crossFetchBinaryRange.ts'
 import { concatUint8Array } from './util.ts'
 

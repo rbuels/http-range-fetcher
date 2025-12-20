@@ -1,8 +1,10 @@
 import eslint from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import eslintPluginUnicorn from 'eslint-plugin-unicorn'
+import importPlugin from 'eslint-plugin-import'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       'webpack.config.js',
@@ -25,7 +27,8 @@ export default tseslint.config(
   ...tseslint.configs.stylisticTypeChecked,
   ...tseslint.configs.strictTypeChecked,
 
-  eslintPluginUnicorn.configs['flat/recommended'],
+  importPlugin.flatConfigs.recommended,
+  eslintPluginUnicorn.configs.recommended,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -97,6 +100,25 @@ export default tseslint.config(
       '@typescript-eslint/restrict-plus-operands': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-useless-escape': 'off',
+
+      'import/extensions': ['error', 'ignorePackages'],
+      'import/no-unresolved': 'off',
+      'import/order': [
+        'error',
+        {
+          named: true,
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc',
+          },
+          groups: [
+            'builtin',
+            ['external', 'internal'],
+            ['parent', 'sibling', 'index', 'object'],
+            'type',
+          ],
+        },
+      ],
     },
   },
 )

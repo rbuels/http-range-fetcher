@@ -1,6 +1,7 @@
 //@ts-nocheck
-import { describe, it, expect } from 'vitest'
-import { parseCacheControl, CacheSemantics } from '../src/cacheSemantics'
+import { describe, expect, it } from 'vitest'
+
+import { CacheSemantics, parseCacheControl } from '../src/cacheSemantics.ts'
 
 describe('cache control parsing', () => {
   ;[
