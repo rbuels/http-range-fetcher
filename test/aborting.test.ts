@@ -16,7 +16,6 @@ it(`can abort a fetch 1`, async () => {
     }
     return {
       headers: {},
-      responseDate: new Date(),
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     }
   }
@@ -33,14 +32,12 @@ it(`can abort a fetch 2`, async () => {
   const calls = []
   async function fetch(url, start, end, options) {
     calls.push([url, start, end, options])
-    // await new Promise(res => process.nextTick(res))
     if (options.signal.aborted) {
       throw Object.assign(new Error('aborted'), { code: 'ERR_ABORTED' })
     }
     await timeout(100)
     return {
       headers: {},
-      responseDate: new Date(),
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     }
   }
@@ -66,7 +63,6 @@ it(`can abort a fetch 3`, async () => {
     }
     return {
       headers: {},
-      responseDate: new Date(),
       buffer: Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     }
   }
