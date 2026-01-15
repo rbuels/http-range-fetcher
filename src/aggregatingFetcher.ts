@@ -66,11 +66,13 @@ export default class AggregatingFetcher {
     )
   }
 
-  // returns a promise that only resolves when all of the signals in the given
-  // array have fired their abort signal
   _allSignalsFired(signals: AbortSignal[]) {
     return new Promise<void>(resolve => {
       let signalsLeft = signals.filter(s => !s.aborted).length
+      if (signalsLeft === 0) {
+        resolve()
+        return
+      }
       signals.forEach(signal => {
         signal.addEventListener('abort', () => {
           signalsLeft -= 1
@@ -79,8 +81,6 @@ export default class AggregatingFetcher {
           }
         })
       })
-    }).catch((e: unknown) => {
-      console.error(e)
     })
   }
 
@@ -185,9 +185,7 @@ export default class AggregatingFetcher {
   }
 
   _enQueue(url: string, request: Req) {
-    if (!this.requestQueues[url]) {
-      this.requestQueues[url] = []
-    }
+    this.requestQueues[url] ??= []
     this.requestQueues[url].push(request)
   }
 

@@ -1,4 +1,4 @@
-export function sum(array: Uint8Array[]) {
+function sum(array: Uint8Array[]) {
   let sum = 0
   for (const entry of array) {
     sum += entry.length

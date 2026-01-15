@@ -1,7 +1,6 @@
 import LRU from '@jbrowse/quick-lru'
 
 import AggregatingFetcher from './aggregatingFetcher.ts'
-import crossFetchBinaryRange from './crossFetchBinaryRange.ts'
 import { concatUint8Array } from './util.ts'
 
 interface ChunkResponse {
@@ -9,22 +8,36 @@ interface ChunkResponse {
   headers: Headers
 }
 
+async function defaultFetch(
+  url: string,
+  start: number,
+  end: number,
+  options = {},
+) {
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { range: `bytes=${start}-${end}` },
+    ...options,
+  })
+  if (res.status !== 206) {
+    throw new Error(
+      `HTTP ${res.status} when fetching ${url} bytes ${start}-${end}`,
+    )
+  }
+  return {
+    headers: res.headers,
+    buffer: await res.bytes(),
+  }
+}
+
 /**
  * check if the given exception was caused by an operation being intentionally aborted
  */
 function isAbortException(exception: any) {
   return (
-    // DOMException
     exception.name === 'AbortError' ||
-    // standard-ish non-DOM abort exception
-    // @ts-ignore
     exception.code === 'ERR_ABORTED' ||
-    // message contains aborted for bubbling through RPC
-    // things we have seen that we want to catch here
-    // Error: aborted
-    // AbortError: aborted
-    // AbortError: The user aborted a request.
-    !!exception.message.match(/\b(aborted|AbortError)\b/i)
+    !!exception.message?.match(/\b(aborted|AbortError)\b/i)
   )
 }
 
@@ -38,7 +51,7 @@ export default class HttpRangeFetcher {
   chunkCache: LRU<string, Promise<ChunkResponse>>
 
   constructor({
-    fetch = crossFetchBinaryRange,
+    fetch = defaultFetch,
     size = 10000000,
     chunkSize = 32768,
     aggregationTime = 100,
@@ -67,11 +80,9 @@ export default class HttpRangeFetcher {
   }
 
   async getRange(key: string, position: number, length: number, options = {}) {
-    // calculate the list of chunks involved in this fetch
     const firstChunk = Math.floor(position / this.chunkSize)
     const lastChunk = Math.floor((position + length - 1) / this.chunkSize)
 
-    // fetch them all as necessary
     const fetches = new Array(lastChunk - firstChunk + 1)
     for (let chunk = firstChunk; chunk <= lastChunk; chunk += 1) {
       fetches[chunk - firstChunk] = this._getChunk(key, chunk, options).then(
@@ -84,7 +95,6 @@ export default class HttpRangeFetcher {
       )
     }
 
-    // return a "composite buffer" that lets the array of chunks be accessed like a flat buffer
     let chunkResponses = await Promise.all(fetches)
     chunkResponses = chunkResponses.filter(r => !!r)
     if (!chunkResponses.length) {
@@ -111,24 +121,17 @@ export default class HttpRangeFetcher {
         chunksOffset,
         chunksOffset + length,
       )
-    } else if (chunkResponses.length === 0) {
-      return new Uint8Array(0)
-    } else {
-      // 2 or more buffers
-      const buffers = chunkResponses.map(r => r.buffer)
-      const first = buffers.shift()!.slice(chunksOffset)
-      let last = buffers.pop()!
-      let trimEnd =
-        first.length +
-        buffers.reduce((sum, buf) => sum + buf.length, 0) +
-        last.length -
-        length
-      if (trimEnd < 0) {
-        trimEnd = 0
-      }
-      last = last.slice(0, last.length - trimEnd)
-      return concatUint8Array([first, ...buffers, last])
     }
+    const buffers = chunkResponses.map(r => r.buffer)
+    buffers[0] = buffers[0]!.slice(chunksOffset)
+    const totalLength = buffers.reduce((sum, buf) => sum + buf.length, 0)
+    const trimEnd = Math.max(0, totalLength - length)
+    const lastIdx = buffers.length - 1
+    buffers[lastIdx] = buffers[lastIdx]!.slice(
+      0,
+      buffers[lastIdx]!.length - trimEnd,
+    )
+    return concatUint8Array(buffers)
   }
 
   async _getChunk(
@@ -151,7 +154,6 @@ export default class HttpRangeFetcher {
           throw err
         }
       }
-      // if the cached chunk was aborted, delete it from the cache and redispatch
       if (chunkAborted) {
         this._uncacheIfSame(chunkKey, cachedPromise)
         return this._getChunk(key, chunkNumber, requestOptions)

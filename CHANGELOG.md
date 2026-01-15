@@ -1,30 +1,16 @@
 ## [5.0.6](https://github.com/rbuels/http-range-fetcher/compare/v5.0.5...v5.0.6) (2025-12-20)
 
-
-
 ## [5.0.5](https://github.com/rbuels/http-range-fetcher/compare/v5.0.3...v5.0.5) (2025-12-17)
-
-
 
 ## [5.0.4](https://github.com/rbuels/http-range-fetcher/compare/v5.0.3...v5.0.4) (2025-12-17)
 
-
-
 ## [5.0.3](https://github.com/rbuels/http-range-fetcher/compare/v5.0.1...v5.0.3) (2025-12-17)
-
-
 
 ## [5.0.2](https://github.com/rbuels/http-range-fetcher/compare/v5.0.1...v5.0.2) (2025-12-17)
 
-
-
 ## [5.0.1](https://github.com/rbuels/http-range-fetcher/compare/v5.0.0...v5.0.1) (2025-05-13)
 
-
-
 # [5.0.0](https://github.com/rbuels/http-range-fetcher/compare/v4.0.0...v5.0.0) (2025-04-30)
-
-
 
 # [5.0.0](https://github.com/rbuels/http-range-fetcher/compare/v4.0.0...v5.0.0) (2025-04-30)
 
